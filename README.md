@@ -1,4 +1,4 @@
-﻿# RealmPulse（神域假人 - 智能氛围组）
+﻿# RealmPulse（智能氛围组）
 
 > 一个轻量、可运营、可调参的 **Packet 假人氛围插件**：
 > 用非实体 Bot 营造在线感，叠加 AI 问答/学习与场景调度。
@@ -173,3 +173,4 @@ mvn -DskipTests clean package
 ## 📄 License
 
 MIT（详见 `LICENSE`）
+
