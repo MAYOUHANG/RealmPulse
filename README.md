@@ -1,138 +1,137 @@
-﻿# RealmPulse
+﻿# RealmPulse（神域假人 - 智能氛围组）
 
-Packet-driven fake-player atmosphere plugin for Spigot/Paper servers.
+> 一个轻量、可运营、可调参的 **Packet 假人氛围插件**：
+> 用非实体 Bot 营造在线感，叠加 AI 问答/学习与场景调度。
 
-[中文说明](README-zh_CN.md)
+[📘 中文运营手册](README-zh_CN.md)
 
-## Features
+![Java 21](https://img.shields.io/badge/Java-21-007396?logo=java&logoColor=white)
+![Spigot/Paper 1.20+](https://img.shields.io/badge/Spigot%2FPaper-1.20%2B-ED8106)
+![ProtocolLib 5+](https://img.shields.io/badge/ProtocolLib-5%2B-5C2D91)
+![Vault Required](https://img.shields.io/badge/Vault-required-2ea44f)
+![Version 2.5](https://img.shields.io/badge/Version-2.5-blue)
 
-- Packet-only ghost players: ghosts appear in tab/chat and do not spawn real entities.
-- Weighted random levels: lower levels are more common, higher levels are rarer.
-- Ghost name generation with mixed language ratio (ZH/EN), random ping, and tab display simulation.
-- Chat atmosphere simulation:
-  - idle messages
-  - welcome messages for first-time joiners
-  - mention/reply interactions
-  - optional English dialogue rounds
-- AI dual-channel design:
-  - QA channel for real-time replies
-  - Summary channel for phrase learning/cleanup
-- Learning pipeline with persistent stores:
-  - `learned-raw.yml`
-  - `learned-phrases-chat.yml`
-  - `learned-phrases-qa.yml`
-  - legacy compatibility file support
-- Additional simulators:
-  - death broadcast simulator
-  - join/quit simulator for ghosts
-  - advancement broadcast simulator (`advancement-events`)
-- Ops presets:
+## ✨ 核心特性（Features）
+
+- 👻 **Packet 假人**：只出现在 Tab/聊天层，不生成真实实体。
+- 🎚️ **等级加权随机**：等级数字越大，出现概率越低（低等级更常见）。
+- 🌐 **双语倾向**：支持中英 Bot 比例、语言匹配聊天模板。
+- 🧠 **AI 双通道**：
+  - QA：实时问答回复
+  - Summary：语料提炼/学习
+- 🧪 **学习系统**：聊天语料去重、过滤、总结并持久化。
+- 🔄 **运营调度**：
   - `/rp profile <lowcost|balanced|pro>`
-  - `/rp scene <peak|quiet|promo>`
-  - `/rp scene auto <on|off|status>` (time-slot scheduler)
-- In-game config operations:
-  - `/rp get|set|list`
-  - `/rp config get|set|list`
-- Config auto-sync on startup and reload:
-  - keeps your existing `config.yml`
-  - only adds missing keys from embedded default config
-  - never overwrites existing values
+  - `/rp scene <peak|quiet|promo|auto>`
+  - `/rp scene auto <on|off|status>`
+- 🏆 **成就广播模拟**：支持自动触发与手动触发。
+- ☠️ **死亡广播模拟** + 🔌 **上下线模拟**。
+- 🛠️ **游戏内改参**：`get / set / list` 与 `config get / set / list`。
+- 🧩 **配置自动补齐**：启动与 `/rp reload` 自动补全新键，保留你已有值。
 
-## Requirements
+## 📦 运行要求（Requirements）
 
 - Java 21+
 - Spigot/Paper 1.20+
-- Vault (required)
-- A Vault Chat provider plugin (required by runtime checks)
-- ProtocolLib (required by runtime checks)
-- Optional: LuckPerms (default prefix lookup)
+- Vault（必需）
+- Vault Chat Provider（运行时校验需要）
+- ProtocolLib（运行时校验需要）
+- 可选：LuckPerms（读取 default 组前缀）
 
-## Installation
+## 🚀 快速开始（Getting Started）
 
-1. Put the jar into your server `plugins/` directory.
-2. Start the server once to generate the default config folder.
-3. Configure `plugins/RealmPulse/config.yml` (or copy from templates in this repo).
-4. Set API keys in game (recommended):
+1. 将插件 JAR 放入 `plugins/`。
+2. 首次启动服务器，生成配置目录。
+3. 选择并编辑配置：`plugins/RealmPulse/config.yml`。
+4. 建议在游戏内设置 API Key：
 
 ```text
 /rp qakey <your_key>
 /rp summarykey <your_key>
 ```
 
-5. Reload plugin config:
+5. 重载配置：
 
 ```text
 /rp reload
 ```
 
-## Config Templates
+## 🧾 配置模板（Repository Templates）
 
-The repository includes:
+- `config.yml`：完整注释版（推荐）
+- `config.min.yml`：低成本/小服基线
+- `config.pro.yml`：高活跃/高质量基线
 
-- `config.yml` (full commented config)
-- `config.min.yml` (low-cost/small-server baseline)
-- `config.pro.yml` (higher activity baseline)
+## 🕹️ 命令速查（Commands）
 
-## Commands
+主命令：`/realmpulse`，别名：`/rp`
 
-Base command: `/realmpulse` (alias: `/rp`)
+### 👥 Bot 管理
 
-### General
+| Command | Description |
+| --- | --- |
+| `/rp bots` | 查看当前 Bot 数量 |
+| `/rp addbot <count>` | 增加 Bot 数量 |
+| `/rp removebot <count>` | 减少 Bot 数量 |
+| `/rp delbot <count>` | `removebot` 别名 |
+| `/rp setbot <count>` | 设置 Bot 总数 |
 
-- `/rp help`
-- `/rp reload`
+> 注：命令层对 Bot 总数上限保护为 `500`。
 
-### Learning
+### 🤖 AI 管理
 
-- `/rp learn status`
-- `/rp learn flush`
+| Command | Description |
+| --- | --- |
+| `/rp qamodel <model>` | 设置问答模型 |
+| `/rp summarymodel <model>` | 设置总结模型 |
+| `/rp qaon <on\|off>` | 问答 AI 开关 |
+| `/rp summaryon <on\|off>` | 总结 AI 开关 |
+| `/rp qaapi <url>` | 问答 API 地址 |
+| `/rp summaryapi <url>` | 总结 API 地址 |
+| `/rp qakey <key>` | 问答 API Key |
+| `/rp summarykey <key>` | 总结 API Key |
 
-### Bot Count
+### 🎛️ 运营预设
 
-- `/rp bots`
-- `/rp addbot <count>`
-- `/rp removebot <count>`
-- `/rp delbot <count>`
-- `/rp setbot <count>`
+| Command | Description |
+| --- | --- |
+| `/rp profile lowcost` | 低成本方案 |
+| `/rp profile balanced` | 均衡方案 |
+| `/rp profile pro` | 高质量方案 |
+| `/rp scene peak` | 高峰活跃场景 |
+| `/rp scene quiet` | 低峰省算力场景 |
+| `/rp scene promo` | 活动宣传场景 |
+| `/rp scene auto on/off/status` | 自动场景调度控制 |
 
-Notes:
+### 📚 学习与运维
 
-- Bot count is capped at 500 in command handlers.
+| Command | Description |
+| --- | --- |
+| `/rp learn status` | 学习状态 |
+| `/rp learn flush` | 立即触发学习总结 |
+| `/rp reload` | 重载并自动补齐配置 |
+| `/rp help` | 帮助信息 |
 
-### AI Controls
+### 🏆 成就模拟
 
-- `/rp qamodel <model>`
-- `/rp summarymodel <model>`
-- `/rp qaon <on|off>`
-- `/rp summaryon <on|off>`
-- `/rp qaapi <url>`
-- `/rp summaryapi <url>`
-- `/rp qakey <key>`
-- `/rp summarykey <key>`
+| Command | Description |
+| --- | --- |
+| `/rp advancement status` | 查看成就模拟器状态 |
+| `/rp advancement trigger` | 手动触发一次广播 |
+| `/rp adv <status\|trigger>` | `advancement` 别名 |
 
-### Presets & Scenes
+### ⚙️ 高级配置读写
 
-- `/rp profile <lowcost|balanced|pro>`
-- `/rp scene <peak|quiet|promo|auto>`
-- `/rp scene auto <on|off|status>`
+| Command | Description |
+| --- | --- |
+| `/rp get <path>` | 读取配置值 |
+| `/rp set <path> <value>` | 写入配置值 |
+| `/rp list [module]` | 列出模块/键 |
+| `/rp config get <path>` | 同上（config 子命令） |
+| `/rp config set <path> <value>` | 同上 |
+| `/rp config list [module]` | 同上 |
 
-### Advancement Simulator
-
-- `/rp advancement <status|trigger>`
-- `/rp adv <status|trigger>`
-
-### Advanced Config
-
-- `/rp get <path>`
-- `/rp set <path> <value>`
-- `/rp list [module]`
-- `/rp config get <path>`
-- `/rp config set <path> <value>`
-- `/rp config list [module]`
-
-## Permissions
-
-From `plugin.yml`:
+## 🔐 权限节点（Permissions）
 
 - `realmpulse.command`
 - `realmpulse.bot.manage`
@@ -148,22 +147,29 @@ From `plugin.yml`:
 - `realmpulse.advancement.status`
 - `realmpulse.advancement.trigger`
 
-## Build
+## 🗂️ 数据文件（Data Files）
+
+插件运行后会维护：
+
+- `learned-raw.yml`
+- `learned-phrases-chat.yml`
+- `learned-phrases-qa.yml`
+- `advancement-progress.yml`
+
+## ⚠️ 重要说明（Behavior Notes）
+
+- 当前 Bot 不是实体，不会在世界中真实走路/交互。
+- 玩家对 Bot 的 TPA 请求会被拦截并拒绝（`messages.prevent-tpa`）。
+- 常见 TPA/私聊命令支持 Bot 名自动补全，提高“在线感”。
+
+## 🛠️ 构建（Build）
 
 ```bash
 mvn -DskipTests clean package
 ```
 
-Output jar:
+输出：`target/RealmPulse-<version>.jar`
 
-- `target/RealmPulse-<version>.jar`
+## 📄 License
 
-## Important Behavior Notes
-
-- Ghosts are not real entities and cannot be targeted like normal players in-world.
-- TPA to ghosts is intentionally blocked by `TeleportInterceptor` and returns a deny message.
-- Ghost names are added to tab-complete for common messaging/TPA commands.
-
-## License
-
-MIT (see `LICENSE`).
+MIT（详见 `LICENSE`）

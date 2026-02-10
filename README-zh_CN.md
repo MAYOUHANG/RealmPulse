@@ -1,39 +1,47 @@
-﻿# RealmPulse 中文说明
+﻿# RealmPulse 中文运营手册
 
-面向服主与管理团队的运营型假人氛围插件说明文档。
+> 让服务器“看起来一直有人玩”的轻量氛围插件。
+> 非实体假人 + AI 问答/学习 + 场景化运营调度。
 
-## 插件定位
+[🌍 English README](README.md)
 
-RealmPulse 通过数据包模拟“在线玩家氛围”，核心目标是提升服务器聊天活跃感，而不是生成可交互实体 NPC。
+![Java 21](https://img.shields.io/badge/Java-21-007396?logo=java&logoColor=white)
+![Spigot/Paper 1.20+](https://img.shields.io/badge/Spigot%2FPaper-1.20%2B-ED8106)
+![ProtocolLib 5+](https://img.shields.io/badge/ProtocolLib-5%2B-5C2D91)
+![Vault Required](https://img.shields.io/badge/Vault-required-2ea44f)
+![Version 2.5](https://img.shields.io/badge/Version-2.5-blue)
 
-当前版本重点能力：
+## ✨ 插件能力概览
 
-- 假人仅在 Tab/聊天层展示（非实体）。
-- 假人等级为加权随机：等级数字越大，出现概率越小。
-- 支持中英语言倾向、随机名称、随机延迟、上下线状态切换。
-- 聊天事件模拟：欢迎、闲聊、提及回复、英文对话轮次。
-- AI 双通道：问答（QA）与总结（Summary）独立配置。
-- 学习系统：从真实玩家聊天提炼短句并持久化。
-- 运营场景：`profile` 一键档位、`scene` 场景切换、`scene auto` 定时调度。
-- 成就广播模拟器：可自动触发，也可手动触发测试。
-- 在线配置管理：支持游戏内 `get/set/list`。
-- 配置自动补齐：启动和 `/rp reload` 时自动补齐新配置项，不覆盖旧值。
+- 👻 **非实体假人（Packet 模拟）**：只在 Tab/聊天层出现。
+- 🎚️ **等级加权随机**：等级越高越稀有，分布更接近真实玩家群体。
+- 🌐 **中英双语倾向**：支持英文 Bot 比例与语言模板池。
+- 💬 **聊天氛围系统**：欢迎语、闲聊、@提及回复、英文对话轮次。
+- 🧠 **AI 双通道设计**：
+  - QA：即时问答
+  - Summary：语料提炼
+- 📚 **学习系统**：原始语料入库、过滤、去重、提炼并持久化。
+- ⚙️ **运营档位**：`profile` 一键套用低成本/均衡/高质量参数。
+- 🕒 **自动场景调度**：`scene auto` 基于时段自动切换策略。
+- 🏆 **成就广播模拟**：自动/手动触发、冷却与频控。
+- 🔌 **上下线模拟** 与 ☠️ **死亡广播模拟**。
+- 🧩 **配置自动补齐**：更新版本后，旧配置不删，自动补充新增项。
 
-## 运行环境
+## 📦 运行环境
 
 - Java 21+
 - Spigot/Paper 1.20+
 - Vault（必需）
-- Vault Chat 提供者（运行时必需）
-- ProtocolLib（运行时必需）
-- 可选：LuckPerms（用于读取默认组前缀）
+- Vault Chat Provider（运行时检查必需）
+- ProtocolLib（运行时检查必需）
+- 可选：LuckPerms（读取 default 组前缀）
 
-## 安装与快速开始
+## 🚀 快速上手
 
-1. 将插件 JAR 放入 `plugins/`。
-2. 启动服务器生成配置目录。
-3. 编辑 `plugins/RealmPulse/config.yml`。
-4. 建议用命令写入 API Key：
+1. 把插件 JAR 放到 `plugins/`。
+2. 启动服务器生成默认配置。
+3. 按需调整 `plugins/RealmPulse/config.yml`。
+4. 建议在游戏内写入密钥（避免明文复制流转）：
 
 ```text
 /rp qakey <your_key>
@@ -46,72 +54,86 @@ RealmPulse 通过数据包模拟“在线玩家氛围”，核心目标是提升
 /rp reload
 ```
 
-## 配置模板
+## 🧾 配置模板
 
-仓库内提供三份模板：
+仓库自带三套模板：
 
-- `config.yml`：完整注释版
-- `config.min.yml`：低成本/小服基线
-- `config.pro.yml`：较高活跃度基线
+- `config.yml`：完整注释引导版（推荐）
+- `config.min.yml`：低成本/小服
+- `config.pro.yml`：高活跃/高质量
 
-## 命令总览
+## 🕹️ 常用命令
 
 主命令：`/realmpulse`，别名：`/rp`
 
-### 常用
+### 👥 假人管理
 
-- `/rp help`
-- `/rp reload`
+| 指令 | 说明 |
+| --- | --- |
+| `/rp bots` | 查看当前假人数量 |
+| `/rp addbot <count>` | 增加假人 |
+| `/rp removebot <count>` | 减少假人 |
+| `/rp delbot <count>` | `removebot` 别名 |
+| `/rp setbot <count>` | 直接设置总数 |
 
-### 学习系统
+> 命令层上限保护：`500`。
 
-- `/rp learn status`
-- `/rp learn flush`
+### 🤖 AI 配置
 
-### 假人数量管理
+| 指令 | 说明 |
+| --- | --- |
+| `/rp qamodel <model>` | 设置 QA 模型 |
+| `/rp summarymodel <model>` | 设置 Summary 模型 |
+| `/rp qaon <on\|off>` | QA 开关 |
+| `/rp summaryon <on\|off>` | Summary 开关 |
+| `/rp qaapi <url>` | QA 接口地址 |
+| `/rp summaryapi <url>` | Summary 接口地址 |
+| `/rp qakey <key>` | QA Key |
+| `/rp summarykey <key>` | Summary Key |
 
-- `/rp bots`
-- `/rp addbot <count>`
-- `/rp removebot <count>`
-- `/rp delbot <count>`
-- `/rp setbot <count>`
+### 🎛️ 运营预设与场景
 
-说明：命令层对假人总数有上限保护（500）。
+| 指令 | 说明 |
+| --- | --- |
+| `/rp profile lowcost` | 低成本档 |
+| `/rp profile balanced` | 均衡档 |
+| `/rp profile pro` | 高质量档 |
+| `/rp scene peak` | 高峰活跃场景 |
+| `/rp scene quiet` | 低峰省算力场景 |
+| `/rp scene promo` | 活动宣传场景 |
+| `/rp scene auto on/off/status` | 自动场景控制 |
 
-### AI 控制
+### 📚 学习与维护
 
-- `/rp qamodel <model>`
-- `/rp summarymodel <model>`
-- `/rp qaon <on|off>`
-- `/rp summaryon <on|off>`
-- `/rp qaapi <url>`
-- `/rp summaryapi <url>`
-- `/rp qakey <key>`
-- `/rp summarykey <key>`
+| 指令 | 说明 |
+| --- | --- |
+| `/rp learn status` | 查看学习状态 |
+| `/rp learn flush` | 立即触发总结 |
+| `/rp reload` | 重载并自动补齐配置 |
+| `/rp help` | 查看帮助 |
 
-### 运营档位与场景
+### 🏆 成就广播模拟
 
-- `/rp profile <lowcost|balanced|pro>`
-- `/rp scene <peak|quiet|promo|auto>`
-- `/rp scene auto <on|off|status>`
+| 指令 | 说明 |
+| --- | --- |
+| `/rp advancement status` | 查看状态 |
+| `/rp advancement trigger` | 手动触发一次 |
+| `/rp adv <status\|trigger>` | `advancement` 别名 |
 
-### 成就广播模拟
+### ⚙️ 高级配置读写
 
-- `/rp advancement <status|trigger>`
-- `/rp adv <status|trigger>`
+| 指令 | 说明 |
+| --- | --- |
+| `/rp get <path>` | 读取配置 |
+| `/rp set <path> <value>` | 写入配置 |
+| `/rp list [module]` | 列出模块或键 |
+| `/rp config get <path>` | 同功能（config 子命令） |
+| `/rp config set <path> <value>` | 同功能 |
+| `/rp config list [module]` | 同功能 |
 
-### 高级配置读写
+## 🔐 权限节点
 
-- `/rp get <path>`
-- `/rp set <path> <value>`
-- `/rp list [module]`
-- `/rp config get <path>`
-- `/rp config set <path> <value>`
-- `/rp config list [module]`
-
-## 权限节点
-
-与 `plugin.yml` 保持一致：
+与 `plugin.yml` 对齐：
 
 - `realmpulse.command`
 - `realmpulse.bot.manage`
@@ -127,22 +149,22 @@ RealmPulse 通过数据包模拟“在线玩家氛围”，核心目标是提升
 - `realmpulse.advancement.status`
 - `realmpulse.advancement.trigger`
 
-## 数据文件
+## 🗂️ 运行数据文件
 
-插件运行后会在数据目录维护以下文件：
+插件目录会维护：
 
 - `learned-raw.yml`
 - `learned-phrases-chat.yml`
 - `learned-phrases-qa.yml`
 - `advancement-progress.yml`
 
-## 重要行为说明
+## ⚠️ 关键行为说明
 
-- 当前假人不是实体，不会在世界中像真实玩家那样移动/交互。
-- 对假人的 TPA 请求会被拦截并返回拒绝提示（`messages.prevent-tpa`）。
-- 常见私聊/TPA 命令支持假人名补全，提升“在线感”。
+- 当前假人不是实体，不能像 NPC 一样走路、受击、交互。
+- 对假人发起 TPA 会被拦截并拒绝（可改 `messages.prevent-tpa` 文案）。
+- 常见私聊/TPA 指令会出现假人名补全，增强在线体验。
 
-## 构建
+## 🛠️ 构建
 
 ```bash
 mvn -DskipTests clean package
@@ -150,6 +172,6 @@ mvn -DskipTests clean package
 
 输出：`target/RealmPulse-<version>.jar`
 
-## 许可证
+## 📄 许可证
 
-MIT，详见 `LICENSE`。
+MIT（见 `LICENSE`）
