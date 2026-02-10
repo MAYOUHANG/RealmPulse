@@ -1,0 +1,190 @@
+# ============================================================
+# RealmPulse - Minimal Template
+# 适用：小服、测试服、预算优先
+# 使用：替换 config.yml 后执行 /rp reload
+# ============================================================
+
+core:
+  ghost-count: 10
+  chat-interval: 180
+
+chat:
+  format: "&r{prefix} &f{name}&8 » &f{message}"
+
+ai:
+  enabled: true
+  qa:
+    enabled: true
+    api-url: "https://api.siliconflow.cn/v1/chat/completions"
+    api-key: "YOUR_API_KEY_HERE"
+    model: "deepseek-ai/DeepSeek-V3"
+    max-tokens: 48
+    system-prompt: "你是服务器普通玩家，回复短、自然、口语化。"
+  summary:
+    enabled: true
+    api-url: "https://api.siliconflow.cn/v1/chat/completions"
+    api-key: "YOUR_API_KEY_HERE"
+    model: "deepseek-ai/DeepSeek-V3"
+    max-tokens: 120
+    system-prompt: "把输入提炼为短句，每行一条。"
+
+admin-ui:
+  prefix: "&#79C7F6&lR&#98DEF7&lP &8| &r"
+
+events:
+  welcome-chance: 0.45
+  reply-chance: 0.10
+  solo-chance: 0.6
+  ghost-followup-chance: 0.12
+  player-mention-reply-chance: 0.01
+  player-mention-reply-boost-chance: 0.03
+  fake-mention-dialogue-enabled: true
+  ghost-mention-back-chance: 0.40
+  english-ghost-ratio: 0.4
+  english-dialogue-enabled: false
+  english-dialogue-interval-seconds: 300
+  english-dialogue-chance: 0.08
+  english-dialogue-participation-ratio: 0.12
+  english-dialogue-use-ai: true
+  english-dialogue-ai-chance: 0.4
+
+death-settings:
+  enabled: true
+  chance: 0.03
+  cmi-format: "&#9BB7D4{name} &7{reason}"
+  death-reasons:
+    - "被坠落的铁砧砸扁了"
+    - "浸在火里"
+    - "掉出了这个世界"
+
+connection-settings:
+  enabled: true
+  interval-seconds: 40
+  quit-chance: 0.01
+  rejoin-chance: 0.06
+  cmi-join-format: "&e{name}&e 加入了游戏"
+  cmi-quit-format: "&e{name}&e 退出了游戏"
+
+messages:
+  welcome-phrases:
+    - "welcome"
+    - "have fun"
+    - "欢迎新人"
+    - "欢迎来到本服"
+  idle-phrases:
+    - "..."
+    - "anyone mining?"
+    - "who is online"
+    - "有人吗"
+    - "求带"
+  agreement-phrases:
+    - "true"
+    - "1"
+    - "确实"
+  prevent-tpa: "&c该玩家拒绝传送请求。"
+  player-mention-templates:
+    - "{player} 我们晚点一起下本？"
+    - "@{player} what route do you use"
+  player-mention-templates-zh:
+    - "{player} 我们晚点一起下本？"
+  player-mention-templates-en:
+    - "@{player} what route do you use"
+  ghost-mention-templates:
+    - "@{target} 先补给一下"
+  ghost-mention-templates-zh:
+    - "@{target} 先补给一下"
+  ghost-mention-templates-en:
+    - "@{target} which route are you running"
+  ghost-mention-reply-templates:
+    - "ok 我来处理 {topic}"
+  ghost-mention-reply-templates-zh:
+    - "ok 我来处理 {topic}"
+  ghost-mention-reply-templates-en:
+    - "got it i can cover {topic}"
+  append-player-id-chance: 0.01
+  append-player-id-boost-chance: 0.02
+  player-id-format: "{message} @{player}"
+  typing-base-min-ticks: 15
+  typing-base-max-ticks: 35
+  typing-per-char-ticks: 2
+  no-repeat-window: 35
+  no-repeat-similarity-threshold: 0.84
+  repeat-rewrite-attempts: 2
+  filter-offline-player-mentions: true
+  ghost-dialogue-memory-size: 60
+  english-seed-phrases:
+    - "anyone doing dungeon runs"
+  english-reply-prefixes:
+    - "yeah"
+  english-content-templates:
+    - "we should optimize {topic} before boss"
+  english-topics:
+    - "gear"
+    - "dungeon"
+  follow-up-templates:
+    - "we can plan {topic} first"
+    - "先准备 {topic} 再出发"
+
+learning:
+  enabled: true
+  min-length: 2
+  max-length: 30
+  pending-max-size: 200
+  raw-max-size: 1200
+  api-summary-enabled: true
+  summary-batch-size: 12
+  summary-min-filtered-size: 6
+  summary-cooldown-seconds: 45
+  summary-input-max-length: 80
+  qa-idle-blend-chance: 0.15
+  summary-dedup-similarity-threshold: 0.86
+  summary-copy-similarity-threshold: 0.93
+  block-contains:
+    - "http://"
+    - "https://"
+    - "discord.gg"
+
+tab:
+  default-prefix-fallback: "&7[玩家]&f"
+
+scene-auto:
+  enabled: false
+  timezone: "Asia/Shanghai"
+  check-interval-seconds: 90
+  priority:
+    - "promo"
+    - "peak"
+    - "quiet"
+  slots:
+    promo:
+      - "12:00-12:30"
+    peak:
+      - "19:00-22:30"
+    quiet:
+      - "00:00-11:59"
+      - "23:00-23:59"
+
+# ------------------------------------------------------------
+# Fake advancement broadcast simulator
+# ------------------------------------------------------------
+advancement-events:
+  enabled: true
+  interval-seconds: 120
+  trigger-chance: 0.20
+  min-online-real-players: 1
+
+  # Cooldowns / rate limits
+  global-min-interval-seconds: 75
+  per-ghost-min-interval-seconds: 300
+  global-max-per-hour: 20
+  per-ghost-max-per-hour: 3
+  max-completions-per-ghost: 300
+
+  # Filters
+  exclude-namespaces:
+    - "minecraft:recipes"
+  exclude-key-contains:
+    - "recipes/"
+
+  # Placeholders: {name} {advancement} {key}
+  message-format: "&6[Advancement] &e{name} has made the advancement &a[{advancement}]"

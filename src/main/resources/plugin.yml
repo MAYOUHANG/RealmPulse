@@ -1,0 +1,59 @@
+name: RealmPulse
+main: com.realmpulse.RealmPulse
+version: 2.5
+api-version: '1.20'
+depend: [Vault]
+softdepend: [ProtocolLib, LuckPerms]
+commands:
+  realmpulse:
+    description: RealmPulse admin command.
+    usage: /<command> help
+    aliases: [rp]
+    permission: realmpulse.command
+permissions:
+  realmpulse.command:
+    description: Allows using base RealmPulse command.
+    default: op
+  realmpulse.bot.manage:
+    description: Allows managing fake bot count in game.
+    default: op
+  realmpulse.ai.manage:
+    description: Allows changing AI endpoint/model toggles in game.
+    default: op
+  realmpulse.profile.apply:
+    description: Allows applying one-click operation profiles.
+    default: op
+  realmpulse.scene.apply:
+    description: Allows switching operation scene presets.
+    default: op
+  realmpulse.scene.auto:
+    description: Allows controlling automatic scene scheduling.
+    default: op
+  realmpulse.reload:
+    description: Allows reloading the RealmPulse configuration.
+    default: op
+  realmpulse.config:
+    description: Allows viewing and listing RealmPulse configuration in game.
+    default: op
+  realmpulse.config.set:
+    description: Allows editing RealmPulse configuration in game.
+    default: op
+  realmpulse.learn.status:
+    description: Allows viewing RealmPulse learning status.
+    default: op
+  realmpulse.learn.flush:
+    description: Allows forcing a learning summary flush.
+    default: op
+  realmpulse.advancement.status:
+    description: Allows viewing advancement simulator status.
+    default: op
+  realmpulse.advancement.trigger:
+    description: Allows manually triggering one advancement broadcast.
+    default: op
+
+
+
+
+
+
+

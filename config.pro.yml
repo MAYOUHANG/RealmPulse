@@ -1,0 +1,265 @@
+# ============================================================
+# RealmPulse - Pro Operations Template
+# 适用：商业服、活动服、分时运营
+# 使用：替换 config.yml 后执行 /rp reload
+# ============================================================
+
+core:
+  ghost-count: 28
+  chat-interval: 95
+
+chat:
+  format: "&r{prefix} &f{name}&8 » &f{message}"
+
+ai:
+  enabled: true
+  qa:
+    enabled: true
+    api-url: "https://api.siliconflow.cn/v1/chat/completions"
+    api-key: "YOUR_API_KEY_HERE"
+    model: "deepseek-ai/DeepSeek-V3"
+    max-tokens: 72
+    system-prompt: "你是服务器老玩家，回答短、自然、实战导向。"
+  summary:
+    enabled: true
+    api-url: "https://api.siliconflow.cn/v1/chat/completions"
+    api-key: "YOUR_API_KEY_HERE"
+    model: "deepseek-ai/DeepSeek-R1"
+    max-tokens: 320
+    system-prompt: "提炼玩家聊天语料，输出高质量短句，每行一条，不解释。"
+
+admin-ui:
+  prefix: "&#79C7F6&lR&#98DEF7&lP &8| &r"
+
+events:
+  welcome-chance: 0.85
+  reply-chance: 0.22
+  solo-chance: 0.75
+  ghost-followup-chance: 0.28
+  player-mention-reply-chance: 0.05
+  player-mention-reply-boost-chance: 0.12
+  fake-mention-dialogue-enabled: true
+  ghost-mention-back-chance: 0.50
+  english-ghost-ratio: 0.55
+  english-dialogue-enabled: true
+  english-dialogue-interval-seconds: 180
+  english-dialogue-chance: 0.28
+  english-dialogue-participation-ratio: 0.2
+  english-dialogue-use-ai: true
+  english-dialogue-ai-chance: 0.9
+
+death-settings:
+  enabled: true
+  chance: 0.06
+  cmi-format: "&#9BB7D4{name} &7{reason}"
+  death-reasons:
+    - "被坠落的铁砧砸扁了"
+    - "试图拥抱仙人掌"
+    - "落地过猛"
+    - "浸在火里"
+    - "在墙里窒息而亡"
+    - "掉出了这个世界"
+    - "随着一声巨响消失了"
+
+connection-settings:
+  enabled: true
+  interval-seconds: 25
+  quit-chance: 0.03
+  rejoin-chance: 0.12
+  cmi-join-format: "&e{name}&e 加入了游戏"
+  cmi-quit-format: "&e{name}&e 退出了游戏"
+
+messages:
+  welcome-phrases:
+    - "welcome"
+    - "hello newcomer"
+    - "welcome to the server"
+    - "have fun"
+    - "欢迎新人"
+    - "欢迎来到本服"
+    - "热烈欢迎"
+  idle-phrases:
+    - "..."
+    - "anyone mining?"
+    - "server lagging?"
+    - "who is online"
+    - "any dungeon run?"
+    - "挖半天啥都没"
+    - "怎么圈地来着"
+    - "箱子怎么上锁"
+    - "服主在不"
+    - "有人吗"
+    - "求带"
+    - "这波可以"
+  agreement-phrases:
+    - "true"
+    - "1"
+    - "yep"
+    - "agree"
+    - "正解"
+    - "确实"
+  prevent-tpa: "&c该玩家拒绝传送请求。"
+  player-mention-templates:
+    - "{player} 我们晚点一起下本？"
+    - "@{player} 你路线怎么走的"
+    - "{player} 记得带方块和食物"
+  player-mention-templates-zh:
+    - "{player} 我们晚点一起下本？"
+    - "@{player} 你路线怎么走的"
+  player-mention-templates-en:
+    - "{player} we can run dungeon later"
+    - "@{player} what route do you use"
+  ghost-mention-templates:
+    - "@{target} 先补给一下"
+    - "@{target} 先跟着{speaker}走"
+  ghost-mention-templates-zh:
+    - "@{target} 先补给一下"
+    - "@{target} 先跟着{speaker}走"
+  ghost-mention-templates-en:
+    - "@{target} which route are you running"
+    - "@{target} can you take farm side"
+  ghost-mention-reply-templates:
+    - "ok 我来处理 {topic}"
+    - "收到 我去打 {topic}"
+  ghost-mention-reply-templates-zh:
+    - "ok 我来处理 {topic}"
+    - "收到 我去打 {topic}"
+  ghost-mention-reply-templates-en:
+    - "got it i can cover {topic}"
+    - "ok i will handle {topic}"
+  append-player-id-chance: 0.02
+  append-player-id-boost-chance: 0.05
+  player-id-format: "{message} @{player}"
+  typing-base-min-ticks: 12
+  typing-base-max-ticks: 32
+  typing-per-char-ticks: 2
+  no-repeat-window: 55
+  no-repeat-similarity-threshold: 0.84
+  repeat-rewrite-attempts: 2
+  filter-offline-player-mentions: true
+  ghost-dialogue-memory-size: 120
+  english-seed-phrases:
+    - "anyone doing dungeon runs"
+    - "i just got a decent drop"
+    - "we need more iron for gear"
+    - "spawn area looks better now"
+    - "i can help with boss prep"
+  english-reply-prefixes:
+    - "yeah"
+    - "true"
+    - "same"
+    - "agreed"
+    - "exactly"
+  english-content-templates:
+    - "we should optimize {topic} before boss"
+    - "focus {topic} first then push nether"
+    - "if {topic} is ready we can speedrun dungeon"
+    - "let us farm {topic} for better gear"
+    - "team up on {topic} and split resources"
+  english-topics:
+    - "gear"
+    - "iron"
+    - "farm"
+    - "dungeon"
+    - "boss"
+    - "route"
+    - "trade"
+  follow-up-templates:
+    - "we can plan {topic} first"
+    - "better to prep {topic} before fight"
+    - "lets split work on {topic}"
+    - "i can handle {topic} side"
+    - "先准备 {topic} 再出发"
+    - "{topic} 先搞定会更稳"
+
+learning:
+  enabled: true
+  min-length: 2
+  max-length: 36
+  pending-max-size: 500
+  raw-max-size: 4000
+  api-summary-enabled: true
+  summary-batch-size: 30
+  summary-min-filtered-size: 10
+  summary-cooldown-seconds: 25
+  summary-input-max-length: 100
+  qa-idle-blend-chance: 0.30
+  summary-dedup-similarity-threshold: 0.86
+  summary-copy-similarity-threshold: 0.93
+  block-contains:
+    - "http://"
+    - "https://"
+    - "www."
+    - "discord.gg"
+    - "cheat"
+    - "sell"
+
+tab:
+  default-prefix-fallback: "&7[玩家]&f"
+
+scene-auto:
+  enabled: true
+  timezone: "Asia/Shanghai"
+  check-interval-seconds: 45
+  priority:
+    - "promo"
+    - "peak"
+    - "quiet"
+  slots:
+    promo:
+      - "12:00-13:00"
+    peak:
+      - "18:00-23:00"
+    quiet:
+      - "00:00-11:59"
+      - "23:01-23:59"
+  weekday:
+    priority:
+      - "promo"
+      - "peak"
+      - "quiet"
+    slots:
+      promo:
+        - "12:00-12:30"
+      peak:
+        - "19:00-22:59"
+      quiet:
+        - "00:00-11:59"
+        - "23:00-23:59"
+  weekend:
+    priority:
+      - "promo"
+      - "peak"
+      - "quiet"
+    slots:
+      promo:
+        - "14:00-17:00"
+      peak:
+        - "20:00-23:30"
+      quiet:
+        - "00:00-13:59"
+
+# ------------------------------------------------------------
+# Fake advancement broadcast simulator
+# ------------------------------------------------------------
+advancement-events:
+  enabled: true
+  interval-seconds: 120
+  trigger-chance: 0.20
+  min-online-real-players: 1
+
+  # Cooldowns / rate limits
+  global-min-interval-seconds: 75
+  per-ghost-min-interval-seconds: 300
+  global-max-per-hour: 20
+  per-ghost-max-per-hour: 3
+  max-completions-per-ghost: 300
+
+  # Filters
+  exclude-namespaces:
+    - "minecraft:recipes"
+  exclude-key-contains:
+    - "recipes/"
+
+  # Placeholders: {name} {advancement} {key}
+  message-format: "&6[Advancement] &e{name} has made the advancement &a[{advancement}]"
