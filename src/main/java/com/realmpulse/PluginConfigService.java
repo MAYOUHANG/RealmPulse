@@ -92,6 +92,7 @@ public class PluginConfigService {
         Object current = get(path);
         Object parsed = parseValue(rawValue, current);
         config.set(path, parsed);
+        plugin.saveConfig();
         return true;
     }
 

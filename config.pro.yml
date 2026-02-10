@@ -1,7 +1,7 @@
 # ============================================================
 # RealmPulse - Pro Operations Template
-# 适用：商业服、活动服、分时运营
-# 使用：替换 config.yml 后执行 /rp reload
+# 閫傜敤锛氬晢涓氭湇銆佹椿鍔ㄦ湇銆侀珮鏃舵杩愯惀
+# 浣跨敤锛氭浛鎹?config.yml 鍚庢墽琛?/rp reload
 # ============================================================
 
 core:
@@ -9,65 +9,151 @@ core:
   chat-interval: 95
 
 chat:
-  format: "&r{prefix} &f{name}&8 » &f{message}"
+  # Single-language mode for all fake-player chat: zh or en
+  language: "zh"
+  id-english-fragment-chance: 0.10
+  authentic-id-pool-chance: 0.90
+  format: "&r{prefix} &f{name}&8 : &f{message}"
 
 ai:
   enabled: true
+  request:
+    connect-timeout-ms: 10000
+    read-timeout-ms: 18000
+    max-retries: 2
+    retry-backoff-ms: 300
+    max-in-flight: 32
   qa:
     enabled: true
     api-url: "https://api.siliconflow.cn/v1/chat/completions"
     api-key: "YOUR_API_KEY_HERE"
     model: "deepseek-ai/DeepSeek-V3"
     max-tokens: 72
-    system-prompt: "你是服务器老玩家，回答短、自然、实战导向。"
+    request-retries: 1
+    system-prompt: "浣犳槸鏈嶅姟鍣ㄨ€佺帺瀹讹紝鍥炵瓟绠€鐭€佽嚜鐒躲€佸疄鎴樺鍚戙€?
   summary:
     enabled: true
     api-url: "https://api.siliconflow.cn/v1/chat/completions"
     api-key: "YOUR_API_KEY_HERE"
     model: "deepseek-ai/DeepSeek-R1"
     max-tokens: 320
-    system-prompt: "提炼玩家聊天语料，输出高质量短句，每行一条，不解释。"
+    request-retries: 3
+    system-prompt: "鎻愮偧鐜╁鑱婂ぉ璇枡锛岃緭鍑洪珮璐ㄩ噺鐭彞锛屾瘡琛屼竴鏉★紝涓嶈В閲娿€?
+
+ai-dialogue:
+  mode: advanced
+  ghost-context-lines: 10
+  real-player-context-lines: 6
+  real-player-memory-size: 160
+  per-ghost-topic-memory: 16
+  topic-owner-max-size: 900
+  single-line-max-attempts: 3
+  max-words-en: 14
+  max-chars-zh: 22
+  styles-en:
+    - "brief and practical teammate"
+    - "calm and route-focused"
+    - "natural and collaborative"
+  styles-zh:
+    - "\u7b80\u77ed\u5b9e\u7528\u961f\u53cb"
+    - "\u51b7\u9759\u8def\u7ebf\u578b"
+    - "\u81ea\u7136\u534f\u4f5c\u578b"
+  default-topics-zh:
+    - "\u88c5\u5907"
+    - "\u526f\u672c"
+    - "\u8def\u7ebf"
+    - "\u6750\u6599"
+    - "\u519c\u573a"
 
 admin-ui:
   prefix: "&#79C7F6&lR&#98DEF7&lP &8| &r"
 
+language:
+  admin-primary: "zh"
+  show-secondary: false
+  admin-secondary: "en"
+
 events:
   welcome-chance: 0.85
+  welcome-min-speakers: 1
+  welcome-max-speakers: 3
   reply-chance: 0.22
-  solo-chance: 0.75
+  ai-strict-no-template-fallback: true
+  qa-lead-delay-min-ticks: 120
+  qa-lead-delay-max-ticks: 230
+  qa-follow-delay-step-min-ticks: 90
+  qa-follow-delay-step-max-ticks: 170
   ghost-followup-chance: 0.28
-  player-mention-reply-chance: 0.05
-  player-mention-reply-boost-chance: 0.12
-  fake-mention-dialogue-enabled: true
+  bot-mention-dialogue-enabled: true
+  bot-mention-dialogue-chance: 0.010
+  bot-mention-dialogue-boost-chance: 0.022
+  bot-mention-dialogue-min-interval-seconds: 210
   ghost-mention-back-chance: 0.50
-  english-ghost-ratio: 0.55
-  english-dialogue-enabled: true
-  english-dialogue-interval-seconds: 180
-  english-dialogue-chance: 0.28
-  english-dialogue-participation-ratio: 0.2
-  english-dialogue-use-ai: true
-  english-dialogue-ai-chance: 0.9
+  idle-chat-use-ai: true
+  idle-chat-ai-chance: 0.80
+  ghost-mention-reply-use-ai: true
+  ghost-mention-reply-ai-chance: 0.85
+  reply-followup-use-ai: true
+  reply-followup-ai-chance: 0.75
+  group-dialogue-enabled: true
+  group-dialogue-interval-seconds: 140
+  group-dialogue-chance: 0.30
+  group-dialogue-participation-ratio: 0.40
+  group-dialogue-use-ai: true
+  group-dialogue-ai-chance: 0.94
+
+humanization:
+  enabled: true
+  require-real-player-online: true
+  min-online-real-players: 1
+  global-chat-cooldown-seconds: 3
+  ghost-chat-cooldown-seconds-min: 15
+  ghost-chat-cooldown-seconds-max: 60
+  burst-window-seconds: 25
+  burst-max-lines: 5
+  same-topic-cooldown-seconds: 100
+  filter-low-signal-lines: true
+  cooldown-cache-stale-seconds: 1800
+  topic-cache-max-size: 4000
+  ghost-cache-max-size: 1000
+  low-signal-blocklist:
+    - "1"
+    - "666"
+    - "..."
+    - "afk"
 
 death-settings:
   enabled: true
   chance: 0.06
+  require-real-player-online: true
+  min-online-real-players: 1
+  global-min-interval-seconds: 150
+  per-ghost-min-interval-seconds: 720
+  dead-duration-seconds-min: 20
+  dead-duration-seconds-max: 80
   cmi-format: "&#9BB7D4{name} &7{reason}"
   death-reasons:
-    - "被坠落的铁砧砸扁了"
-    - "试图拥抱仙人掌"
-    - "落地过猛"
-    - "浸在火里"
-    - "在墙里窒息而亡"
-    - "掉出了这个世界"
-    - "随着一声巨响消失了"
+    - "琚潬钀界殑閾佺牕鐮告墎浜?
+    - "璇曞浘鎷ユ姳浠欎汉鎺?
+    - "璐村湴椋炶澶辫触"
+    - "鍦ㄧ伀閲屾礂婢?
+    - "鍦ㄥ閲岀獟鎭€屼骸"
+    - "鎺夊嚭浜嗚繖涓笘鐣?
+    - "闅忕潃涓€澹板法鍝嶆秷澶变簡"
 
 connection-settings:
   enabled: true
   interval-seconds: 25
+  require-real-player-online: true
+  target-online-ratio: 0.76
+  target-ratio-tolerance: 0.07
+  min-seconds-between-state-change: 120
+  max-state-changes-per-tick: 2
+  state-cache-stale-seconds: 3600
   quit-chance: 0.03
   rejoin-chance: 0.12
-  cmi-join-format: "&e{name}&e 加入了游戏"
-  cmi-quit-format: "&e{name}&e 退出了游戏"
+  cmi-join-format: "&e{name}&e 鍔犲叆浜嗘父鎴?
+  cmi-quit-format: "&e{name}&e 閫€鍑轰簡娓告垙"
 
 messages:
   welcome-phrases:
@@ -75,55 +161,70 @@ messages:
     - "hello newcomer"
     - "welcome to the server"
     - "have fun"
-    - "欢迎新人"
-    - "欢迎来到本服"
-    - "热烈欢迎"
+    - "娆㈣繋鏂颁汉"
+    - "娆㈣繋鏉ュ埌鏈湇"
+    - "鐑儓娆㈣繋"
+  welcome-phrases-zh:
+    - "娆㈣繋鏂颁汉"
+    - "娆㈣繋鏉ュ埌鏈湇"
+    - "鐑儓娆㈣繋"
+  welcome-phrases-en:
+    - "welcome"
+    - "hello newcomer"
+    - "welcome to the server"
+    - "have fun"
   idle-phrases:
     - "..."
     - "anyone mining?"
     - "server lagging?"
     - "who is online"
     - "any dungeon run?"
-    - "挖半天啥都没"
-    - "怎么圈地来着"
-    - "箱子怎么上锁"
-    - "服主在不"
-    - "有人吗"
-    - "求带"
-    - "这波可以"
-  agreement-phrases:
-    - "true"
-    - "1"
-    - "yep"
-    - "agree"
-    - "正解"
-    - "确实"
-  prevent-tpa: "&c该玩家拒绝传送请求。"
+    - "鎸栧崐澶╁暐閮芥病鏈?
+    - "鎬庝箞鍦堝湴鏉ョ潃"
+    - "绠卞瓙鎬庝箞涓婇攣"
+    - "鏈嶄富鍦ㄤ笉"
+    - "鏈変汉鍚?
+    - "姹傚甫"
+    - "杩欐尝鍙互"
+  idle-phrases-zh:
+    - "鎸栧崐澶╁暐閮芥病鏈?
+    - "鎬庝箞鍦堝湴鏉ョ潃"
+    - "绠卞瓙鎬庝箞涓婇攣"
+    - "鏈嶄富鍦ㄤ笉"
+    - "鏈変汉鍚?
+    - "姹傚甫"
+    - "杩欐尝鍙互"
+  idle-phrases-en:
+    - "anyone mining?"
+    - "server lagging?"
+    - "who is online"
+    - "any dungeon run?"
+  prevent-tpa: "&c璇ョ帺瀹舵嫆缁濅紶閫佽姹傘€?
   player-mention-templates:
-    - "{player} 我们晚点一起下本？"
-    - "@{player} 你路线怎么走的"
-    - "{player} 记得带方块和食物"
+    - "{player} 鎴戜滑鏅氱偣涓€璧蜂笅鏈紵"
+    - "@{player} 浣犺矾绾挎€庝箞璧帮紵"
+    - "{player} 璁板緱甯︽柟鍧楀拰椋熺墿"
   player-mention-templates-zh:
-    - "{player} 我们晚点一起下本？"
-    - "@{player} 你路线怎么走的"
+    - "{player} 鎴戜滑鏅氱偣涓€璧蜂笅鏈紵"
+    - "@{player} 浣犺矾绾挎€庝箞璧帮紵"
   player-mention-templates-en:
     - "{player} we can run dungeon later"
     - "@{player} what route do you use"
   ghost-mention-templates:
-    - "@{target} 先补给一下"
-    - "@{target} 先跟着{speaker}走"
+    - "@{target} 鍏堣ˉ缁欎竴涓?
+    - "@{target} 鍏堣窡鐫€{speaker}锛?
   ghost-mention-templates-zh:
-    - "@{target} 先补给一下"
-    - "@{target} 先跟着{speaker}走"
+    - "@{target} 鍏堣ˉ缁欎竴涓?
+    - "@{target} 鍏堣窡鐫€{speaker}锛?
   ghost-mention-templates-en:
     - "@{target} which route are you running"
     - "@{target} can you take farm side"
   ghost-mention-reply-templates:
-    - "ok 我来处理 {topic}"
-    - "收到 我去打 {topic}"
+    - "ok 鎴戞潵澶勭悊 {topic}"
+    - "鏀跺埌锛屾垜鍘粄topic}"
   ghost-mention-reply-templates-zh:
-    - "ok 我来处理 {topic}"
-    - "收到 我去打 {topic}"
+    - "ok 鎴戞潵澶勭悊 {topic}"
+    - "鏀跺埌锛屾垜鍘粄topic}"
   ghost-mention-reply-templates-en:
     - "got it i can cover {topic}"
     - "ok i will handle {topic}"
@@ -138,18 +239,65 @@ messages:
   repeat-rewrite-attempts: 2
   filter-offline-player-mentions: true
   ghost-dialogue-memory-size: 120
+  audience-no-repeat-window: 160
+  audience-tracked-players: 600
+  audience-no-repeat-similarity-threshold: 0.80
+  audience-similarity-tail-scan: 32
+  non-ai-dialogue:
+    topics-zh:
+      - "瑁呭"
+      - "璺嚎"
+      - "鍓湰"
+      - "鏉愭枡"
+      - "鍒锋€"
+      - "鑽按"
+      - "浠撳簱鏁寸悊"
+      - "闄勯瓟"
+      - "浜ゆ槗"
+    topics-en:
+      - "gear"
+      - "route"
+      - "dungeon"
+      - "farm"
+      - "potions"
+      - "storage"
+      - "enchants"
+      - "trading"
+    lead-templates-zh:
+      - "浠婃櫄鍏堣ˉ{topic}锛岀ǔ涓€鐐瑰啀寮€鎵?
+      - "{topic}杩欏潡璋佸厛鎺ヤ竴涓嬶紵"
+      - "鎴戝厛鐪媨topic}杩涘害锛屼綘浠ˉ缁欏甫澶?
+      - "鍏堟妸{topic}鐞嗛『锛屽悗闈細蹇緢澶?
+      - "{topic}涓嶆€ュ啿锛屽厛鎶婂閿欐媺婊?
+      - "鎴戜滑鍏堢粺涓€{topic}鑺傚锛屽啀鎺ㄨ繘涓荤嚎"
+    reply-templates-zh:
+      - "琛岋紝鎴戞潵绠topic}杩欒竟"
+      - "鎴戣ˉ{topic}锛屼綘浠厛鎺ㄨ繘涓荤嚎"
+      - "{topic}鎴戝厛璧蜂竴鐗堬紝绛変細浣犱滑鎺ユ墜"
+      - "閭ｆ垜鍏堝仛{topic}锛屾墦瀹屽啀姹囧悎"
+      - "{topic}鎴戣繖杈规湁鏂规锛岀瓑鎴戜袱鍒嗛挓"
+      - "鏀跺埌锛寋topic}鎴戞潵鍏滃簳"
+      - "鎴戝厛鎶妠topic}鎵撳簳锛屼綘浠埆鏂妭濂?
+    lead-templates-en:
+      - "lets prep {topic} first then push"
+      - "who wants to take {topic} side"
+      - "i can check {topic} progress first"
+      - "if {topic} is stable we move faster"
+      - "we should tidy {topic} before boss"
+      - "lets align on {topic} then route out"
+    reply-templates-en:
+      - "i can cover {topic} side"
+      - "i will start {topic}, you push main route"
+      - "give me two mins on {topic}"
+      - "ok i will lock {topic} first"
+      - "i can handle {topic} for now"
+      - "i will stabilize {topic} then regroup"
   english-seed-phrases:
     - "anyone doing dungeon runs"
     - "i just got a decent drop"
     - "we need more iron for gear"
     - "spawn area looks better now"
     - "i can help with boss prep"
-  english-reply-prefixes:
-    - "yeah"
-    - "true"
-    - "same"
-    - "agreed"
-    - "exactly"
   english-content-templates:
     - "we should optimize {topic} before boss"
     - "focus {topic} first then push nether"
@@ -169,8 +317,8 @@ messages:
     - "better to prep {topic} before fight"
     - "lets split work on {topic}"
     - "i can handle {topic} side"
-    - "先准备 {topic} 再出发"
-    - "{topic} 先搞定会更稳"
+    - "鍏堝噯澶噞topic} 鍐嶅嚭鍙?
+    - "{topic} 鍏堟悶浼氭洿绋?
 
 learning:
   enabled: true
@@ -178,14 +326,33 @@ learning:
   max-length: 36
   pending-max-size: 500
   raw-max-size: 4000
+  max-refined-size: 1800
+  per-player-cooldown-seconds: 4
+  throttle-memory-size: 1000
+  filter-short-english: true
+  min-english-words: 3
+  max-repeated-char-run: 6
+  queue-dedup-similarity-threshold: 0.88
+  queue-dedup-tail-scan: 180
   api-summary-enabled: true
   summary-batch-size: 30
   summary-min-filtered-size: 10
   summary-cooldown-seconds: 25
+  auto-summary-interval-seconds: 8
+  summary-backlog-bypass-threshold: 90
   summary-input-max-length: 100
+  summary-input-dedup-similarity-threshold: 0.88
+  summary-keep-dominant-language: true
+  summary-dominant-language-threshold: 0.68
   qa-idle-blend-chance: 0.30
+  strict-no-copy: true
+  allow-raw-fallback-import: false
+  summary-force-fallback-after-failures: 4
+  summary-warning-interval-seconds: 120
+  summary-api-max-attempts: 3
+  enforce-configured-chat-language: true
   summary-dedup-similarity-threshold: 0.86
-  summary-copy-similarity-threshold: 0.93
+  summary-copy-similarity-threshold: 0.88
   block-contains:
     - "http://"
     - "https://"
@@ -254,6 +421,7 @@ advancement-events:
   global-max-per-hour: 20
   per-ghost-max-per-hour: 3
   max-completions-per-ghost: 300
+  advancement-cache-seconds: 240
 
   # Filters
   exclude-namespaces:

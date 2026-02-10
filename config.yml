@@ -1,31 +1,31 @@
-# ============================================================
+﻿# ============================================================
 # RealmPulse - Admin Friendly Config (UTF-8)
 # ============================================================
-# 使用说明（强烈建议先看）：
+# 使用说明（强烈建议先看）
 # 1) 修改后建议执行：/rp reload
-# 2) API Key 建议通过游戏内指令设置，避免明文传播：
+# 2) API Key 建议通过游戏内指令设置，避免明文传播
 #    /rp qakey <your_key>
 #    /rp summarykey <your_key>
-# 3) 推荐先用一键套餐测试：
+# 3) 推荐先用档位套餐测试
 #    /rp profile lowcost|balanced|pro
-# 4) 推荐在高峰服启用场景自动调度：
+# 4) 推荐在高峰服启用场景自动调度
 #    /rp scene auto on
 #
 # 常见问题：
-# - 时段格式必须是 HH:mm-HH:mm，例如 18:00-22:59
+# - 时段格式必须是 HH:mm-HH:mm，例：18:00-22:59
 # - 所有概率都在 0.0~1.0 之间
-# - 模型或接口填错时，AI 会无回复
+# - 或接口填错时，AI 会无回复
 
 # ------------------------------------------------------------
-# 核心模块（机器人数量、聊天频率）
+# core 模块（机器人数量、聊天频率）
 # ------------------------------------------------------------
 core:
-  # 机器人总数（建议 10~50）
-  # 注意：过高会影响真实感与性能，推荐先从 20 测试。
+  # 机器人数（建议 10~50）
+  # 注意：过高会影响真实感与性能，推荐先 20 测试
   ghost-count: 20
 
   # 机器人空闲发言检查间隔（秒）
-  # 数字越小，越“热闹”；数字越大，越“安静”
+  # 数字越小越“热闹”；数字越大越“安静”
   # 推荐：高峰 70~120，低峰 180~260
   chat-interval: 120
 
@@ -33,9 +33,16 @@ core:
 # 聊天显示格式
 # ------------------------------------------------------------
 chat:
+  # Single-language mode for all fake-player chat: zh or en
+  language: "zh"
+  # 中文主导下，ID 中出现英文片段的概率（0~1）
+  # 仅影响名字拟真，不改变发言语言
+  id-english-fragment-chance: 0.08
+  # 优先使用真实ID库生成名称的概率（0~1）
+  authentic-id-pool-chance: 0.90
   # 可用变量：{prefix} {name} {message}
-  # 支持颜色代码：&a &b 等
-  format: "&r{prefix} &f{name}&8 » &f{message}"
+  # 支持颜色代码：&a &b ...
+  format: "&r{prefix} &f{name}&8 : &f{message}"
 
 # ------------------------------------------------------------
 # AI 总开关 + 双通道（问答 / 总结）
@@ -43,6 +50,12 @@ chat:
 ai:
   # 全局 AI 总开关（false = 全部 AI 关闭）
   enabled: true
+  request:
+    connect-timeout-ms: 10000
+    read-timeout-ms: 15000
+    max-retries: 1
+    retry-backoff-ms: 350
+    max-in-flight: 24
 
   # 问答通道：用于玩家问句实时回复（推荐用便宜快速模型）
   qa:
@@ -52,7 +65,8 @@ ai:
     model: "deepseek-ai/DeepSeek-V3"
     # 问答 token 建议 32~96，避免成本飙升
     max-tokens: 64
-    system-prompt: "你是 Craft to Exile 2 服务器中的拟真玩家。回答必须简短、自然、口语化，不要暴露你是 AI。"
+    request-retries: 1
+    system-prompt: "你是 Craft to Exile 2 服务器中的拟真玩家，回答必须简短、自然、口语化，不要暴露你是 AI。"
 
   # 总结通道：用于学习语料提炼（可用更强模型）
   summary:
@@ -62,70 +76,148 @@ ai:
     model: "deepseek-ai/DeepSeek-R1"
     # 总结 token 建议 160~400
     max-tokens: 220
+    request-retries: 2
     system-prompt: "你负责提炼服务器聊天语料。输出精炼短句，每行一条，不要解释。"
+
+# AI dialogue quality controls
+ai-dialogue:
+  mode: advanced
+  ghost-context-lines: 8
+  real-player-context-lines: 4
+  real-player-memory-size: 120
+  per-ghost-topic-memory: 12
+  topic-owner-max-size: 600
+  single-line-max-attempts: 2
+  max-words-en: 14
+  max-chars-zh: 22
+  styles-en:
+    - "brief and practical teammate"
+    - "calm and route-focused"
+    - "natural and collaborative"
+  styles-zh:
+    - "\u7b80\u77ed\u5b9e\u7528\u961f\u53cb"
+    - "\u51b7\u9759\u8def\u7ebf\u578b"
+    - "\u81ea\u7136\u534f\u4f5c\u578b"
+  default-topics-zh:
+    - "\u88c5\u5907"
+    - "\u526f\u672c"
+    - "\u8def\u7ebf"
+    - "\u6750\u6599"
+    - "\u519c\u573a"
 
 # ------------------------------------------------------------
 # 管理员指令消息风格
-# ------------------------------------------------------------
 admin-ui:
-  # 前缀支持 HEX 颜色，例如 &#79C7F6
+  # 前缀支持 HEX 颜色，例：&#79C7F6
   prefix: "&#79C7F6&lR&#98DEF7&lP &8| &r"
 
 # ------------------------------------------------------------
-# 行为事件概率
+# 管理端语言显示策略
+# ------------------------------------------------------------
+language:
+  # zh / en
+  admin-primary: "zh"
+  # 是否在主语言后追加次语言（例如 中文 | English）
+  show-secondary: false
+  # zh / en
+  admin-secondary: "en"
+
+# ------------------------------------------------------------
+# 行为事件概览
 # ------------------------------------------------------------
 events:
   # 新玩家首次进服时，机器人欢迎参与比例权重
-  welcome-chance: 0.6
+  welcome-chance: 0.60
+  welcome-min-speakers: 1
+  welcome-max-speakers: 2
 
   # AI 对话后，机器人跟进回复比例权重
   reply-chance: 0.15
-
-  # 空闲自说自话倾向（保留扩展）
-  solo-chance: 0.7
+  ai-strict-no-template-fallback: true
+  qa-lead-delay-min-ticks: 120
+  qa-lead-delay-max-ticks: 240
+  qa-follow-delay-step-min-ticks: 90
+  qa-follow-delay-step-max-ticks: 170
 
   # 跟话概率（跟随上一条机器人回复）
   ghost-followup-chance: 0.2
 
-  # 真实玩家被提及时，机器人主动搭话概率
-  player-mention-reply-chance: 0.02
-  player-mention-reply-boost-chance: 0.06
-  fake-mention-dialogue-enabled: true
+  # bot 间 @ 对话触发概率（不 @真实玩家）
+  bot-mention-dialogue-enabled: true
+  bot-mention-dialogue-chance: 0.006
+  bot-mention-dialogue-boost-chance: 0.015
+  bot-mention-dialogue-min-interval-seconds: 240
   ghost-mention-back-chance: 0.45
+  idle-chat-use-ai: true
+  idle-chat-ai-chance: 0.70
+  ghost-mention-reply-use-ai: true
+  ghost-mention-reply-ai-chance: 0.75
+  reply-followup-use-ai: true
+  reply-followup-ai-chance: 0.65
 
-  # 英文机器人占比（0~1）
-  english-ghost-ratio: 0.5
-
-  # 英文对话模块
-  english-dialogue-enabled: true
-  english-dialogue-interval-seconds: 240
-  english-dialogue-chance: 0.15
-  english-dialogue-participation-ratio: 0.15
-  english-dialogue-use-ai: true
-  english-dialogue-ai-chance: 0.75
+  # 多人对话模块（AI 优先；严格模式下失败不回落模板）
+  group-dialogue-enabled: true
+  group-dialogue-interval-seconds: 180
+  group-dialogue-chance: 0.24
+  group-dialogue-participation-ratio: 0.35
+  group-dialogue-use-ai: true
+  group-dialogue-ai-chance: 0.88
 
 # ------------------------------------------------------------
-# 死亡广播模拟
+# 拟人化节奏控制
+humanization:
+  enabled: true
+  require-real-player-online: true
+  min-online-real-players: 1
+  global-chat-cooldown-seconds: 4
+  ghost-chat-cooldown-seconds-min: 20
+  ghost-chat-cooldown-seconds-max: 75
+  burst-window-seconds: 30
+  burst-max-lines: 4
+  same-topic-cooldown-seconds: 120
+  filter-low-signal-lines: true
+  cooldown-cache-stale-seconds: 1800
+  topic-cache-max-size: 4000
+  ghost-cache-max-size: 1000
+  low-signal-blocklist:
+    - "1"
+    - "666"
+    - "..."
+    - "afk"
+
 # ------------------------------------------------------------
+# 死亡广播模块
 death-settings:
   enabled: true
   chance: 0.05
+  require-real-player-online: true
+  min-online-real-players: 1
+  global-min-interval-seconds: 180
+  per-ghost-min-interval-seconds: 900
+  dead-duration-seconds-min: 25
+  dead-duration-seconds-max: 90
   cmi-format: "&#9BB7D4{name} &7{reason}"
   death-reasons:
     - "被坠落的铁砧砸扁了"
     - "试图拥抱仙人掌"
-    - "落地过猛"
-    - "浸在火里"
+    - "贴地飞行失败"
+    - "在火里洗澡"
     - "在墙里窒息而亡"
     - "掉出了这个世界"
     - "随着一声巨响消失了"
 
 # ------------------------------------------------------------
-# 上下线模拟
+# 上下线模块
 # ------------------------------------------------------------
 connection-settings:
   enabled: true
   interval-seconds: 30
+  require-real-player-online: true
+  target-online-ratio: 0.72
+  target-ratio-tolerance: 0.08
+  min-seconds-between-state-change: 180
+  max-state-changes-per-tick: 2
+  state-cache-stale-seconds: 3600
   quit-chance: 0.02
   rejoin-chance: 0.1
   cmi-join-format: "&e{name}&e 加入了游戏"
@@ -135,110 +227,130 @@ connection-settings:
 # 文案池（欢迎、闲聊、跟话等）
 # ------------------------------------------------------------
 messages:
-  welcome-phrases:
-    - "welcome"
-    - "hello newcomer"
-    - "welcome to the server"
-    - "have fun"
+  # 语言拆分，避免中英混杂
+  welcome-phrases-zh:
     - "欢迎新人"
     - "新人你好"
     - "欢迎欢迎"
     - "欢迎加入我们"
     - "欢迎来到本服"
     - "热烈欢迎"
+  welcome-phrases-en:
+    - "welcome"
+    - "hello newcomer"
+    - "welcome to the server"
+    - "have fun"
 
-  idle-phrases:
-    - "1"
-    - "..."
+  idle-phrases-zh:
+    - "挖半天啥都没有"
+    - "怎么圈地来着"
+    - "箱子怎么上锁"
+    - "挂机？"
+    - "服主在不"
+    - "有人吗"
+    - "求带"
+    - "这波可以"
+    - "感谢大佬"
+  idle-phrases-en:
     - "anyone mining?"
     - "server lagging?"
     - "who is online"
     - "any dungeon run?"
-    - "挖半天啥都没"
-    - "怎么圈地来着"
-    - "箱子怎么上锁"
-    - "有 tpa 吗"
     - "afk"
-    - "挂机一会"
-    - "服主在不"
-    - "有人吗"
-    - "666"
-    - "求带"
-    - "这波可以"
-    - "感谢大佬"
-
-  agreement-phrases:
-    - "true"
-    - "1"
-    - "yep"
-    - "agree"
-    - "正解"
-    - "确实"
 
   prevent-tpa: "&c该玩家拒绝传送请求。"
 
-  # @真实玩家 提及模板
-  player-mention-templates:
-    - "{player} 我们晚点一起下本？"
-    - "@{player} 你路线怎么走的"
-    - "{player} 记得带方块和食物"
-  player-mention-templates-zh:
-    - "{player} 我们晚点一起下本？"
-    - "@{player} 你路线怎么走的"
-    - "{player} 记得带方块和食物"
-  player-mention-templates-en:
-    - "{player} we can run dungeon later"
-    - "@{player} what route do you use"
-    - "{player} bring blocks and food"
+  # @bot 提及模板（仅 bot 间）
   ghost-mention-templates:
     - "@{target} 先补给一下"
-    - "@{target} 先跟着{speaker}走"
+    - "@{target} 先跟着{speaker}？"
   ghost-mention-templates-zh:
     - "@{target} 先补给一下"
-    - "@{target} 先跟着{speaker}走"
+    - "@{target} 先跟着{speaker}？"
   ghost-mention-templates-en:
     - "@{target} which route are you running"
     - "@{target} can you take farm side"
   ghost-mention-reply-templates:
     - "ok 我来处理 {topic}"
-    - "收到 我去打 {topic}"
+    - "收到，我去{topic}"
   ghost-mention-reply-templates-zh:
     - "ok 我来处理 {topic}"
-    - "收到 我去打 {topic}"
+    - "收到，我去{topic}"
   ghost-mention-reply-templates-en:
     - "got it i can cover {topic}"
     - "ok i will handle {topic}"
 
-  # 消息末尾附加 @玩家 的概率
-  append-player-id-chance: 0.01
-  append-player-id-boost-chance: 0.03
-  player-id-format: "{message} @{player}"
+  # 消息末尾附加 @bot 的概率
+  append-ghost-id-chance: 0.003
+  append-ghost-id-boost-chance: 0.008
+  ghost-id-format: "{message} @{player}"
 
-  # 打字延迟模拟（tick，20tick=1秒）
+  # 打字延迟模拟（tick，20 tick = 1秒）
   typing-base-min-ticks: 15
   typing-base-max-ticks: 35
   typing-per-char-ticks: 2
 
-  # 去重窗口：最近 N 条不重复
+  # 去重窗口：最近 N 条去重
   no-repeat-window: 40
   no-repeat-similarity-threshold: 0.84
   repeat-rewrite-attempts: 2
   filter-offline-player-mentions: true
   ghost-dialogue-memory-size: 80
+  audience-no-repeat-window: 120
+  audience-tracked-players: 400
+  audience-no-repeat-similarity-threshold: 0.82
+  audience-similarity-tail-scan: 24
 
-  # 英文对话素材
+  # 非 AI 对话模板池（AI 关闭或回退时使用）
+  non-ai-dialogue:
+    topics-zh:
+      - "装备"
+      - "路线"
+      - "副本"
+      - "材料"
+      - "刷怪塔"
+      - "药水"
+      - "仓库整理"
+    topics-en:
+      - "gear"
+      - "route"
+      - "dungeon"
+      - "farm"
+      - "potions"
+      - "storage"
+    lead-templates-zh:
+      - "今晚先补{topic}，稳一点再开打"
+      - "{topic}这块谁先接一下？"
+      - "我先看{topic}进度，你们补给带够"
+      - "先把{topic}理顺，后面会快很多"
+      - "{topic}不急冲，先把容错拉满"
+    reply-templates-zh:
+      - "行，我来管{topic}这边"
+      - "我补{topic}，你们先推进主线"
+      - "{topic}我先起一版，等会你们接手"
+      - "那我先做{topic}，打完再汇合"
+      - "{topic}我这边有方案，等我两分钟"
+      - "收到，{topic}我来兜底"
+    lead-templates-en:
+      - "lets prep {topic} first then push"
+      - "who wants to take {topic} side"
+      - "i can check {topic} progress first"
+      - "if {topic} is stable we move faster"
+      - "we should tidy {topic} before boss"
+    reply-templates-en:
+      - "i can cover {topic} side"
+      - "i will start {topic}, you push main route"
+      - "give me two mins on {topic}"
+      - "ok i will lock {topic} first"
+      - "i can handle {topic} for now"
+
+  # 英文话素材
   english-seed-phrases:
     - "anyone doing dungeon runs"
     - "i just got a decent drop"
     - "we need more iron for gear"
     - "spawn area looks better now"
     - "i can help with boss prep"
-  english-reply-prefixes:
-    - "yeah"
-    - "true"
-    - "same"
-    - "agreed"
-    - "exactly"
   english-content-templates:
     - "we should optimize {topic} before boss"
     - "focus {topic} first then push nether"
@@ -258,8 +370,8 @@ messages:
     - "better to prep {topic} before fight"
     - "lets split work on {topic}"
     - "i can handle {topic} side"
-    - "先准备 {topic} 再出发"
-    - "{topic} 先搞定会更稳"
+    - "先准备{topic} 再出发"
+    - "{topic} 先搞会更稳"
 
 # ------------------------------------------------------------
 # 学习模块（从真实玩家聊天中提炼短句）
@@ -270,14 +382,33 @@ learning:
   max-length: 36
   pending-max-size: 300
   raw-max-size: 2000
+  max-refined-size: 1200
+  per-player-cooldown-seconds: 6
+  throttle-memory-size: 600
+  filter-short-english: true
+  min-english-words: 3
+  max-repeated-char-run: 5
+  queue-dedup-similarity-threshold: 0.90
+  queue-dedup-tail-scan: 120
   api-summary-enabled: true
   summary-batch-size: 20
   summary-min-filtered-size: 8
   summary-cooldown-seconds: 30
+  auto-summary-interval-seconds: 12
+  summary-backlog-bypass-threshold: 60
   summary-input-max-length: 90
+  summary-input-dedup-similarity-threshold: 0.90
+  summary-keep-dominant-language: true
+  summary-dominant-language-threshold: 0.70
   qa-idle-blend-chance: 0.20
+  strict-no-copy: true
+  allow-raw-fallback-import: false
+  summary-force-fallback-after-failures: 5
+  summary-warning-interval-seconds: 120
+  summary-api-max-attempts: 2
+  enforce-configured-chat-language: true
   summary-dedup-similarity-threshold: 0.86
-  summary-copy-similarity-threshold: 0.93
+  summary-copy-similarity-threshold: 0.88
   block-contains:
     - "http://"
     - "https://"
@@ -366,6 +497,8 @@ advancement-events:
   global-max-per-hour: 20
   per-ghost-max-per-hour: 3
   max-completions-per-ghost: 300
+  progress-max-tracked-ghosts: 3000
+  advancement-cache-seconds: 300
 
   # Filters
   exclude-namespaces:
@@ -375,3 +508,4 @@ advancement-events:
 
   # Placeholders: {name} {advancement} {key}
   message-format: "&6[Advancement] &e{name} has made the advancement &a[{advancement}]"
+

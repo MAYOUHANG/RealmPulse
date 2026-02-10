@@ -49,62 +49,60 @@ public class ConnectionListener implements Listener {
             return;
         }
 
-        double welcomeChance = plugin.getConfig().getDouble("events.welcome-chance", 0.6);
+        double welcomeChance = clamp(plugin.getConfig().getDouble("events.welcome-chance", 0.6), 0.0, 1.0);
+        if (ThreadLocalRandom.current().nextDouble() > welcomeChance) {
+            return;
+        }
         List<GhostPlayer> shuffled = new ArrayList<>(deathManager.getAliveGhosts(GhostManager.getOnlineGhosts()));
         Collections.shuffle(shuffled);
-        int speakers = (int) Math.floor(shuffled.size() * welcomeChance);
+        if (shuffled.isEmpty()) {
+            return;
+        }
+        int minSpeakers = Math.max(1, plugin.getConfig().getInt("events.welcome-min-speakers", 1));
+        int maxSpeakers = Math.max(minSpeakers, plugin.getConfig().getInt("events.welcome-max-speakers", 2));
+        int suggested = (int) Math.floor(shuffled.size() * welcomeChance);
+        if (suggested <= 0) {
+            suggested = 1;
+        }
+        int speakers = Math.max(minSpeakers, suggested);
+        speakers = Math.min(maxSpeakers, speakers);
+        speakers = Math.min(speakers, shuffled.size());
         if (speakers <= 0) {
             return;
         }
         List<String> welcomePhrases = plugin.getConfig().getStringList("messages.welcome-phrases");
         String format = configService.getString("chat.format", "{prefix}{name}: {message}");
-        long lastTalkTime = 0L;
-        long currentDelay = lastTalkTime + 40L;
+        long currentDelay = 40L;
         for (int i = 0; i < speakers && i < shuffled.size(); i++) {
             GhostPlayer ghost = shuffled.get(i);
             String phrase = pickWelcomePhraseForGhost(welcomePhrases, ghost);
             long typingDelay = calculateTypingDelayTicks(phrase);
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                MessageUtils.broadcast(ghost, format, phrase);
-            }, currentDelay + typingDelay);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> MessageUtils.broadcast(ghost, format, phrase), currentDelay + typingDelay);
             long interval = 40L + ThreadLocalRandom.current().nextInt(60);
             currentDelay += interval;
         }
     }
 
     private String pickWelcomePhraseForGhost(List<String> phrases, GhostPlayer ghost) {
-        if (phrases.isEmpty()) {
-            return ghost.isEnglishSpeaker() ? "Welcome!" : "欢迎";
+        boolean english = ghost != null && ghost.isEnglishSpeaker();
+        List<String> localized = plugin.getConfig().getStringList(english ? "messages.welcome-phrases-en" : "messages.welcome-phrases-zh");
+        if (!localized.isEmpty()) {
+            return localized.get(ThreadLocalRandom.current().nextInt(localized.size()));
         }
+        if (phrases.isEmpty()) {
+            return english ? "Welcome!" : "\u6b22\u8fce\u4f60";
+        }
+
         List<String> filtered = new ArrayList<>();
         for (String phrase : phrases) {
-            if (ghost.isEnglishSpeaker() == isEnglishLike(phrase)) {
+            if (LanguageClassifier.matches(phrase, english)) {
                 filtered.add(phrase);
             }
         }
-        List<String> pool = filtered.isEmpty() ? phrases : filtered;
-        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
-    }
-
-    private boolean isEnglishLike(String text) {
-        if (text == null || text.isBlank()) {
-            return false;
+        if (filtered.isEmpty()) {
+            return english ? "Welcome!" : "\u6b22\u8fce\u4f60";
         }
-        int letters = 0;
-        int asciiLetters = 0;
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (Character.isLetter(c)) {
-                letters++;
-                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-                    asciiLetters++;
-                }
-            }
-        }
-        if (letters < 3) {
-            return false;
-        }
-        return ((double) asciiLetters / (double) letters) >= 0.85;
+        return filtered.get(ThreadLocalRandom.current().nextInt(filtered.size()));
     }
 
     private long calculateTypingDelayTicks(String text) {
@@ -114,5 +112,9 @@ public class ConnectionListener implements Listener {
         long randomBase = baseMin + ThreadLocalRandom.current().nextLong(baseMax - baseMin + 1L);
         int length = text == null ? 0 : text.length();
         return randomBase + length * perChar;
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

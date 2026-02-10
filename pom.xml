@@ -5,7 +5,7 @@
 
     <groupId>com.realmpulse</groupId>
     <artifactId>RealmPulse</artifactId>
-    <version>2.5</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
     <name>RealmPulse</name>

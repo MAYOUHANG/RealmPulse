@@ -17,6 +17,9 @@ public class RawLearningStore {
     private final File file;
     private final Set<String> lines = new LinkedHashSet<>();
     private final Object lock = new Object();
+    private final Object saveLock = new Object();
+    private boolean saveQueued = false;
+    private boolean dirty = false;
 
     public RawLearningStore(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -64,7 +67,27 @@ public class RawLearningStore {
     }
 
     private void saveAsync() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::saveNow);
+        synchronized (saveLock) {
+            dirty = true;
+            if (saveQueued) {
+                return;
+            }
+            saveQueued = true;
+        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::drainPendingSaves);
+    }
+
+    private void drainPendingSaves() {
+        while (true) {
+            synchronized (saveLock) {
+                if (!dirty) {
+                    saveQueued = false;
+                    return;
+                }
+                dirty = false;
+            }
+            saveNow();
+        }
     }
 
     private void saveNow() {

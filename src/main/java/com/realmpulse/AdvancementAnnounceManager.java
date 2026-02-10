@@ -29,6 +29,8 @@ public class AdvancementAnnounceManager {
     private final Deque<Long> globalTriggerTimes = new ArrayDeque<>();
     private final Map<UUID, Deque<Long>> ghostTriggerTimes = new HashMap<>();
     private final Map<UUID, Long> ghostLastTriggerAt = new HashMap<>();
+    private volatile List<AdvancementChoice> cachedAdvancements = List.of();
+    private volatile long cachedAdvancementsAt = 0L;
 
     private BukkitTask task;
     private long globalLastTriggerAt = 0L;
@@ -90,6 +92,8 @@ public class AdvancementAnnounceManager {
         if (!isEnabled()) {
             return;
         }
+        cachedAdvancements = List.of();
+        cachedAdvancementsAt = 0L;
         long intervalSeconds = Math.max(10L, configService.getLong("advancement-events.interval-seconds", 90L));
         task = Bukkit.getScheduler().runTaskTimer(plugin, this::runTick, intervalSeconds * 20L, intervalSeconds * 20L);
     }
@@ -112,6 +116,7 @@ public class AdvancementAnnounceManager {
     public AdvancementStatus getStatus() {
         long now = System.currentTimeMillis();
         pruneOld(globalTriggerTimes, now);
+        pruneGhostRuntimeState(now);
         return new AdvancementStatus(
             isEnabled(),
             collectAdvancements().size(),
@@ -137,6 +142,7 @@ public class AdvancementAnnounceManager {
         }
 
         long now = System.currentTimeMillis();
+        pruneGhostRuntimeState(now);
         if (!passesGlobalLimits(now)) {
             return new TriggerResult(false, "global-limit", "", "", "");
         }
@@ -217,6 +223,17 @@ public class AdvancementAnnounceManager {
         pruneOld(times, now);
     }
 
+    private void pruneGhostRuntimeState(long now) {
+        Set<UUID> active = GhostManager.getGhosts().stream()
+            .map(GhostPlayer::getUuid)
+            .collect(Collectors.toSet());
+        ghostLastTriggerAt.keySet().removeIf(uuid -> !active.contains(uuid));
+        ghostTriggerTimes.keySet().removeIf(uuid -> !active.contains(uuid));
+        for (Deque<Long> times : ghostTriggerTimes.values()) {
+            pruneOld(times, now);
+        }
+    }
+
     private void pruneOld(Deque<Long> times, long now) {
         while (!times.isEmpty() && now - times.peekFirst() > ONE_HOUR_MS) {
             times.removeFirst();
@@ -224,6 +241,13 @@ public class AdvancementAnnounceManager {
     }
 
     private List<AdvancementChoice> collectAdvancements() {
+        long now = System.currentTimeMillis();
+        long cacheMs = Math.max(10L, configService.getLong("advancement-events.advancement-cache-seconds", 300L)) * 1000L;
+        List<AdvancementChoice> snapshot = cachedAdvancements;
+        if (!snapshot.isEmpty() && now - cachedAdvancementsAt <= cacheMs) {
+            return snapshot;
+        }
+
         Set<String> excludedNamespaces = configService.getStringList("advancement-events.exclude-namespaces")
             .stream()
             .map(String::trim)
@@ -264,7 +288,10 @@ public class AdvancementAnnounceManager {
             }
             list.add(new AdvancementChoice(fullKey, prettyNameFromPath(path)));
         }
-        return list;
+        List<AdvancementChoice> immutable = List.copyOf(list);
+        cachedAdvancements = immutable;
+        cachedAdvancementsAt = now;
+        return immutable;
     }
 
     private String prettyNameFromPath(String path) {

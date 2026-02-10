@@ -9,11 +9,9 @@ import com.comphenix.protocol.wrappers.EnumWrappers.PlayerInfoAction;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedSignedProperty;
 import java.util.Collections;
 import java.util.EnumSet;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -51,7 +49,6 @@ public class PacketManager {
         packet.getPlayerInfoActions().write(0, tabListActions);
 
         WrappedGameProfile profile = ghost.getProfile();
-        applySkin(profile, ghost);
         ghost.setRandomPing();
 
         PlayerInfoData infoData = new PlayerInfoData(
@@ -105,15 +102,6 @@ public class PacketManager {
         for (Player player : Bukkit.getOnlinePlayers()) {
             sendTabListAdd(player, ghost);
         }
-    }
-
-    private void applySkin(WrappedGameProfile profile, GhostPlayer ghost) {
-        String texture = ghost.getSkinTexture();
-        String signature = ghost.getSkinSignature();
-        if (texture == null || texture.isBlank() || signature == null || signature.isBlank()) {
-            return;
-        }
-        profile.getProperties().put("textures", new WrappedSignedProperty("textures", texture, signature));
     }
 
     public void sendScoreboardLevel(Player target, GhostPlayer ghost) {

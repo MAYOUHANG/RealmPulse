@@ -18,6 +18,9 @@ public class PhraseLearningStore {
     private final File file;
     private final Map<String, String> phrasesByKey = new LinkedHashMap<>();
     private final Object lock = new Object();
+    private final Object saveLock = new Object();
+    private boolean saveQueued = false;
+    private boolean dirty = false;
 
     public PhraseLearningStore(JavaPlugin plugin) {
         this(plugin, "learned-phrases.yml");
@@ -60,6 +63,22 @@ public class PhraseLearningStore {
         }
     }
 
+    public int trimToMaxSize(int maxSize) {
+        int safeMax = Math.max(1, maxSize);
+        int removed = 0;
+        synchronized (lock) {
+            while (phrasesByKey.size() > safeMax) {
+                String firstKey = phrasesByKey.keySet().iterator().next();
+                phrasesByKey.remove(firstKey);
+                removed++;
+            }
+        }
+        if (removed > 0) {
+            saveAsync();
+        }
+        return removed;
+    }
+
     private void load() {
         if (!file.exists()) {
             return;
@@ -77,7 +96,27 @@ public class PhraseLearningStore {
     }
 
     private void saveAsync() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::saveNow);
+        synchronized (saveLock) {
+            dirty = true;
+            if (saveQueued) {
+                return;
+            }
+            saveQueued = true;
+        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::drainPendingSaves);
+    }
+
+    private void drainPendingSaves() {
+        while (true) {
+            synchronized (saveLock) {
+                if (!dirty) {
+                    saveQueued = false;
+                    return;
+                }
+                dirty = false;
+            }
+            saveNow();
+        }
     }
 
     private void saveNow() {

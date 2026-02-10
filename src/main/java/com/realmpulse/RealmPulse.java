@@ -54,6 +54,10 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         if (syncedEntries > 0) {
             getLogger().info("Config auto-updated: added " + syncedEntries + " missing entries from defaults.");
         }
+        int removedDeprecated = pruneDeprecatedConfigKeys();
+        if (removedDeprecated > 0) {
+            getLogger().info("Config auto-cleaned: removed " + removedDeprecated + " deprecated entries.");
+        }
         sendHeader();
 
         getLogger().info("Initializing environment...");
@@ -108,6 +112,7 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         getServer().getPluginManager().registerEvents(new RealPlayerChatListener(smartChatManager), this);
         smartChatManager.startIdleChat();
         smartChatManager.startEnglishDialogue();
+        smartChatManager.startLearningSummarizer();
         deathManager.startDeathSimulation();
         connectionSimulator.startSimulation();
         advancementAnnounceManager = new AdvancementAnnounceManager(this, configService, deathManager);
@@ -119,23 +124,44 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
             }
         }, 20L * 30, 20L * 30);
 
-        getLogger().info("System status: [READY]");
-        getLogger().info("Running version: " + getDescription().getVersion());
-        getLogger().info("Learning system: [ACTIVE]");
-        getLogger().info("Signature: MAAAABG");
+        sendStartupReadyBanner();
         refreshSceneAutoTask();
     }
 
     private void sendHeader() {
-        Bukkit.getConsoleSender().sendMessage(" ");
-        Bukkit.getConsoleSender().sendMessage("[RealmPulse] Atmosphere Reborn");
-        Bukkit.getConsoleSender().sendMessage("Version: " + getDescription().getVersion() + " | Developer: MAAAABG");
-        Bukkit.getConsoleSender().sendMessage("-------------------------------------------");
-        Bukkit.getConsoleSender().sendMessage(" ");
+        consoleSoft("");
+        consoleSoft("&8[&#8FB8C6RealmPulse&8] &7Boot sequence started");
+        consoleSoft("&8[&#8FB8C6RealmPulse&8] &7Version: &#A9C7D6v" + getDescription().getVersion() + " &8| &7Sig: &#A9C7D6MAAAABG");
+        consoleSoft("&8[&#8FB8C6RealmPulse&8] &7Pipeline: &#9FCBB8core &8> &#9FCBB8chat &8> &#9FCBB8ai &8> &#9FCBB8sync &8> &#9FCBB8scene");
+        consoleSoft("");
+    }
+
+    private void sendStartupReadyBanner() {
+        consoleSoft("&8[&#8FB8C6RealmPulse&8] &7Status: &#A8D5BAREADY");
+        consoleSoft("&8[&#8FB8C6RealmPulse&8] &7Learning: &#A8D5BAACTIVE");
+        consoleSoft("&8[&#8FB8C6RealmPulse&8] &7Runtime: &#A9C7D6v" + getDescription().getVersion() + " &8| &7Mood: &#A9C7D6Calm");
+    }
+
+    private void sendShutdownBannerStart() {
+        consoleSoft("");
+        consoleSoft("&8[&#C8BBD6RealmPulse&8] &7Shutdown sequence started");
+        consoleSoft("&8[&#C8BBD6RealmPulse&8] &7Finalizing: &#D8C9A8tasks &8-> &#D8C9A8cache &8-> &#D8C9A8sessions");
+    }
+
+    private void sendShutdownBannerEnd() {
+        consoleSoft("&8[&#C8BBD6RealmPulse&8] &7Status: &#D8C9A8OFFLINE");
+        consoleSoft("&8[&#C8BBD6RealmPulse&8] &7Shutdown complete. See you next boot.");
+        consoleSoft("");
+    }
+
+    private void consoleSoft(String line) {
+        Bukkit.getConsoleSender().sendMessage(ColorUtils.translate(line));
     }
 
     @Override
     public void onDisable() {
+        sendShutdownBannerStart();
+        Bukkit.getScheduler().cancelTasks(this);
         if (packetManager != null) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 for (GhostPlayer ghost : GhostManager.getOnlineGhosts()) {
@@ -154,9 +180,10 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         if (advancementAnnounceManager != null) {
             advancementAnnounceManager.stop();
         }
-        getLogger().info("System status: [STOPPING]");
-        getLogger().info("System status: [OFFLINE]");
-        getLogger().info("System shutting down... Goodbye!");
+        if (connectionSimulator != null) {
+            connectionSimulator.stopSimulation();
+        }
+        sendShutdownBannerEnd();
     }
 
     public boolean setupChat() {
@@ -311,8 +338,20 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         if (text.startsWith("Pending queue: ")) {
             return "\u5F85\u5904\u7406\u961F\u5217: " + text.substring("Pending queue: ".length());
         }
+        if (text.startsWith("Pending queue (general/qa): ")) {
+            return "\u5F85\u5904\u7406\u961F\u5217\uFF08\u666E\u901A/\u95EE\u7B54\uFF09: "
+                + text.substring("Pending queue (general/qa): ".length());
+        }
         if (text.startsWith("Refined phrases: ")) {
             return "\u63D0\u70BC\u77ED\u53E5: " + text.substring("Refined phrases: ".length());
+        }
+        if (text.startsWith("Summary in-flight (general/qa): ")) {
+            String raw = text.substring("Summary in-flight (general/qa): ".length());
+            return "\u603B\u7ED3\u8FDB\u884C\u4E2D\uFF08\u666E\u901A/\u95EE\u7B54\uFF09: " + zhBoolPair(raw);
+        }
+        if (text.startsWith("Summary failure streak (general/qa): ")) {
+            return "\u603B\u7ED3\u5931\u8D25\u8FDE\u7EED\u6B21\u6570\uFF08\u666E\u901A/\u95EE\u7B54\uFF09: "
+                + text.substring("Summary failure streak (general/qa): ".length());
         }
         if (text.startsWith("Current bot count: ")) {
             return "\u5F53\u524D\u673A\u5668\u4EBA\u6570\u91CF: " + text.substring("Current bot count: ".length());
@@ -328,14 +367,17 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         if (text.startsWith("Bot count set to: ")) {
             return "\u673A\u5668\u4EBA\u6570\u91CF\u5DF2\u8BBE\u7F6E\u4E3A: " + text.substring("Bot count set to: ".length());
         }
+        if (text.startsWith("Config auto-cleaned: removed ")) {
+            return "\u914D\u7F6E\u81EA\u52A8\u6E05\u7406: \u5DF2\u79FB\u9664 " + text.substring("Config auto-cleaned: removed ".length());
+        }
         if (text.startsWith("Config value: ")) {
             return "\u914D\u7F6E\u503C: " + text.substring("Config value: ".length());
         }
-        if (text.startsWith("Modules: ")) {
-            return "\u6A21\u5757: " + text.substring("Modules: ".length());
+        if (text.startsWith("Sections: ")) {
+            return "\u914D\u7F6E\u5206\u533A: " + text.substring("Sections: ".length());
         }
-        if (text.startsWith("Module is empty or not found: ")) {
-            return "\u6A21\u5757\u4E3A\u7A7A\u6216\u672A\u627E\u5230: " + text.substring("Module is empty or not found: ".length());
+        if (text.startsWith("Section is empty or not found: ")) {
+            return "\u5206\u533A\u4E3A\u7A7A\u6216\u672A\u627E\u5230: " + text.substring("Section is empty or not found: ".length());
         }
         if (text.startsWith("Keys [")) {
             return "\u952E\u5217\u8868[" + text.substring("Keys [".length());
@@ -427,6 +469,27 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         return raw;
     }
 
+    private String zhBoolPair(String rawPair) {
+        if (rawPair == null || rawPair.isBlank()) {
+            return "";
+        }
+        String[] parts = rawPair.split("/", 2);
+        if (parts.length != 2) {
+            return zhBool(rawPair.trim());
+        }
+        return zhBool(parts[0].trim()) + "/" + zhBool(parts[1].trim());
+    }
+
+    private String zhBool(String raw) {
+        if ("true".equalsIgnoreCase(raw)) {
+            return "\u662F";
+        }
+        if ("false".equalsIgnoreCase(raw)) {
+            return "\u5426";
+        }
+        return raw;
+    }
+
     private boolean handleReload(CommandSender sender) {
         if (!sender.hasPermission("realmpulse.reload")) {
             adminMessageService.error(sender, zhOf("You do not have permission."), "You do not have permission.");
@@ -439,8 +502,20 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
             String msg = "Config auto-updated: added " + syncedEntries + " missing entries.";
             adminMessageService.info(sender, zhOf(msg), msg);
         }
+        int removedDeprecated = pruneDeprecatedConfigKeys();
+        if (removedDeprecated > 0) {
+            String msg = "Config auto-cleaned: removed " + removedDeprecated + " deprecated entries.";
+            adminMessageService.info(sender, zhOf(msg), msg);
+        }
+        if (ghostManager != null && packetManager != null) {
+            int currentCount = configService.getInt("core.ghost-count", ghostManager.totalCount());
+            applyGhostCount(currentCount);
+        }
         if (advancementAnnounceManager != null) {
             advancementAnnounceManager.start();
+        }
+        if (connectionSimulator != null) {
+            connectionSimulator.reload();
         }
         getLogger().info("System status: [READY]");
         adminMessageService.success(sender, zhOf("Configuration reloaded."), "Configuration reloaded.");
@@ -486,6 +561,42 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         }
     }
 
+    private int pruneDeprecatedConfigKeys() {
+        FileConfiguration liveConfig = getConfig();
+        List<String> deprecatedPaths = Arrays.asList(
+            "events.player-mention-reply-chance",
+            "events.player-mention-reply-boost-chance",
+            "events.fake-mention-dialogue-enabled",
+            "events.english-dialogue-enabled",
+            "events.english-dialogue-interval-seconds",
+            "events.english-dialogue-chance",
+            "events.english-dialogue-participation-ratio",
+            "events.english-dialogue-use-ai",
+            "events.english-dialogue-ai-chance",
+            "messages.welcome-phrases",
+            "messages.idle-phrases",
+            "messages.player-mention-templates",
+            "messages.player-mention-templates-zh",
+            "messages.player-mention-templates-en",
+            "messages.append-player-id-chance",
+            "messages.append-player-id-boost-chance",
+            "messages.player-id-format",
+            "real-account"
+        );
+        int removed = 0;
+        for (String path : deprecatedPaths) {
+            if (!liveConfig.contains(path, true)) {
+                continue;
+            }
+            liveConfig.set(path, null);
+            removed++;
+        }
+        if (removed > 0) {
+            saveConfig();
+        }
+        return removed;
+    }
+
     private boolean handleLearn(CommandSender sender, String[] args) {
         if (args.length < 2) {
             adminMessageService.warn(sender, zhOf("Usage: /rp learn status|flush"), "Usage: /rp learn status|flush");
@@ -505,7 +616,22 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
             adminMessageService.info(sender, zhOf("Learning status"), "Learning status");
             adminMessageService.info(sender, zhOf("Raw records: " + status.rawCount), "Raw records: " + status.rawCount);
             adminMessageService.info(sender, zhOf("Pending queue: " + status.pendingCount), "Pending queue: " + status.pendingCount);
+            adminMessageService.info(
+                sender,
+                zhOf("Pending queue (general/qa): " + status.pendingGeneralCount + "/" + status.pendingQaCount),
+                "Pending queue (general/qa): " + status.pendingGeneralCount + "/" + status.pendingQaCount
+            );
             adminMessageService.info(sender, zhOf("Refined phrases: " + status.refinedCount), "Refined phrases: " + status.refinedCount);
+            adminMessageService.info(
+                sender,
+                zhOf("Summary in-flight (general/qa): " + status.generalSummaryInFlight + "/" + status.qaSummaryInFlight),
+                "Summary in-flight (general/qa): " + status.generalSummaryInFlight + "/" + status.qaSummaryInFlight
+            );
+            adminMessageService.info(
+                sender,
+                zhOf("Summary failure streak (general/qa): " + status.generalSummaryFailureStreak + "/" + status.qaSummaryFailureStreak),
+                "Summary failure streak (general/qa): " + status.generalSummaryFailureStreak + "/" + status.qaSummaryFailureStreak
+            );
             return true;
         }
         if ("flush".equals(action)) {
@@ -614,7 +740,6 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
             return true;
         }
         configService.setByUserPath(path, value);
-        saveConfig();
         adminMessageService.success(sender, zhOf(enName + " updated: " + value), enName + " updated: " + value);
         return true;
     }
@@ -639,7 +764,6 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
             return true;
         }
         configService.setByUserPath(path, String.valueOf(enabled));
-        saveConfig();
         adminMessageService.success(sender, zhOf(enName + " set to: " + (enabled ? "ON" : "OFF")), enName + " set to: " + (enabled ? "ON" : "OFF"));
         return true;
     }
@@ -659,7 +783,6 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
             return true;
         }
         configService.setByUserPath(path, value);
-        saveConfig();
         adminMessageService.success(sender, zhOf(enName + " updated."), enName + " updated.");
         return true;
     }
@@ -700,7 +823,6 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
                 adminMessageService.error(sender, zhOf("Failed to set config value."), "Failed to set config value.");
                 return true;
             }
-            saveConfig();
             adminMessageService.success(sender, zhOf("Config updated."), "Config updated.");
             return true;
         }
@@ -708,13 +830,13 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         if ("list".equals(action)) {
             if (args.length == 1) {
                 List<String> modules = configService.listTopModules();
-                adminMessageService.info(sender, zhOf("Modules: " + String.join(", ", modules)), "Modules: " + String.join(", ", modules));
+                adminMessageService.info(sender, zhOf("Sections: " + String.join(", ", modules)), "Sections: " + String.join(", ", modules));
                 return true;
             }
             String module = args[1];
             List<String> keys = configService.listPaths(module);
             if (keys.isEmpty()) {
-                adminMessageService.warn(sender, zhOf("Module is empty or not found: " + module), "Module is empty or not found: " + module);
+                adminMessageService.warn(sender, zhOf("Section is empty or not found: " + module), "Section is empty or not found: " + module);
                 return true;
             }
             Collections.sort(keys);
@@ -747,8 +869,7 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
                 configService.setByUserPath("ai.summary.enabled", "true");
                 configService.setByUserPath("ai.summary.model", "deepseek-ai/DeepSeek-V3");
                 configService.setByUserPath("ai.summary.max-tokens", "120");
-                configService.setByUserPath("events.english-dialogue-ai-chance", "0.50");
-                saveConfig();
+                configService.setByUserPath("events.group-dialogue-ai-chance", "0.50");
                 adminMessageService.success(sender, zhOf("Applied profile: lowcost"), "Applied profile: lowcost");
                 adminMessageService.info(sender, zhOf("Low cost: fewer bots + lower-cost models"), "Low cost: fewer bots + lower-cost models");
                 return true;
@@ -762,8 +883,7 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
                 configService.setByUserPath("ai.summary.enabled", "true");
                 configService.setByUserPath("ai.summary.model", "deepseek-ai/DeepSeek-R1");
                 configService.setByUserPath("ai.summary.max-tokens", "220");
-                configService.setByUserPath("events.english-dialogue-ai-chance", "0.75");
-                saveConfig();
+                configService.setByUserPath("events.group-dialogue-ai-chance", "0.75");
                 adminMessageService.success(sender, zhOf("Applied profile: balanced"), "Applied profile: balanced");
                 adminMessageService.info(sender, zhOf("Balanced: efficient QA + quality summary"), "Balanced: efficient QA + quality summary");
                 return true;
@@ -777,8 +897,7 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
                 configService.setByUserPath("ai.summary.enabled", "true");
                 configService.setByUserPath("ai.summary.model", "deepseek-ai/DeepSeek-R1");
                 configService.setByUserPath("ai.summary.max-tokens", "320");
-                configService.setByUserPath("events.english-dialogue-ai-chance", "0.90");
-                saveConfig();
+                configService.setByUserPath("events.group-dialogue-ai-chance", "0.90");
                 adminMessageService.success(sender, zhOf("Applied profile: pro"), "Applied profile: pro");
                 adminMessageService.info(sender, zhOf("Pro: more bots + stronger summarization"), "Pro: more bots + stronger summarization");
                 return true;
@@ -833,14 +952,12 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
         String action = args[2].toLowerCase(Locale.ROOT);
         if ("on".equals(action)) {
             configService.setByUserPath("scene-auto.enabled", "true");
-            saveConfig();
             refreshSceneAutoTask();
             adminMessageService.success(sender, zhOf("Auto scene enabled."), "Auto scene enabled.");
             return true;
         }
         if ("off".equals(action)) {
             configService.setByUserPath("scene-auto.enabled", "false");
-            saveConfig();
             refreshSceneAutoTask();
             adminMessageService.success(sender, zhOf("Auto scene disabled."), "Auto scene disabled.");
             return true;
@@ -897,12 +1014,12 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
                 configService.setByUserPath("core.chat-interval", "70");
                 configService.setByUserPath("events.reply-chance", "0.25");
                 configService.setByUserPath("events.welcome-chance", "0.80");
-                configService.setByUserPath("events.player-mention-reply-chance", "0.05");
-                configService.setByUserPath("events.player-mention-reply-boost-chance", "0.12");
-                configService.setByUserPath("events.english-dialogue-enabled", "true");
-                configService.setByUserPath("events.english-dialogue-chance", "0.35");
-                configService.setByUserPath("events.english-dialogue-ai-chance", "0.90");
-                saveConfig();
+                configService.setByUserPath("events.bot-mention-dialogue-chance", "0.05");
+                configService.setByUserPath("events.bot-mention-dialogue-boost-chance", "0.12");
+                configService.setByUserPath("events.bot-mention-dialogue-enabled", "true");
+                configService.setByUserPath("events.group-dialogue-enabled", "true");
+                configService.setByUserPath("events.group-dialogue-chance", "0.35");
+                configService.setByUserPath("events.group-dialogue-ai-chance", "0.90");
                 return true;
             }
             case "quiet" -> {
@@ -910,12 +1027,12 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
                 configService.setByUserPath("core.chat-interval", "220");
                 configService.setByUserPath("events.reply-chance", "0.08");
                 configService.setByUserPath("events.welcome-chance", "0.35");
-                configService.setByUserPath("events.player-mention-reply-chance", "0.01");
-                configService.setByUserPath("events.player-mention-reply-boost-chance", "0.03");
-                configService.setByUserPath("events.english-dialogue-enabled", "false");
-                configService.setByUserPath("events.english-dialogue-chance", "0.08");
-                configService.setByUserPath("events.english-dialogue-ai-chance", "0.40");
-                saveConfig();
+                configService.setByUserPath("events.bot-mention-dialogue-chance", "0.01");
+                configService.setByUserPath("events.bot-mention-dialogue-boost-chance", "0.03");
+                configService.setByUserPath("events.bot-mention-dialogue-enabled", "true");
+                configService.setByUserPath("events.group-dialogue-enabled", "false");
+                configService.setByUserPath("events.group-dialogue-chance", "0.08");
+                configService.setByUserPath("events.group-dialogue-ai-chance", "0.40");
                 return true;
             }
             case "promo" -> {
@@ -923,12 +1040,12 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
                 configService.setByUserPath("core.chat-interval", "95");
                 configService.setByUserPath("events.reply-chance", "0.22");
                 configService.setByUserPath("events.welcome-chance", "0.95");
-                configService.setByUserPath("events.player-mention-reply-chance", "0.08");
-                configService.setByUserPath("events.player-mention-reply-boost-chance", "0.16");
-                configService.setByUserPath("events.english-dialogue-enabled", "true");
-                configService.setByUserPath("events.english-dialogue-chance", "0.30");
-                configService.setByUserPath("events.english-dialogue-ai-chance", "0.85");
-                saveConfig();
+                configService.setByUserPath("events.bot-mention-dialogue-chance", "0.08");
+                configService.setByUserPath("events.bot-mention-dialogue-boost-chance", "0.16");
+                configService.setByUserPath("events.bot-mention-dialogue-enabled", "true");
+                configService.setByUserPath("events.group-dialogue-enabled", "true");
+                configService.setByUserPath("events.group-dialogue-chance", "0.30");
+                configService.setByUserPath("events.group-dialogue-ai-chance", "0.85");
                 return true;
             }
             default -> {
@@ -1061,12 +1178,14 @@ public final class RealmPulse extends JavaPlugin implements TabExecutor {
 
         ghostManager.initializeGhosts(target);
         configService.setByUserPath("core.ghost-count", String.valueOf(target));
-        saveConfig();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             for (GhostPlayer ghost : GhostManager.getOnlineGhosts()) {
                 packetManager.sendTabListAdd(player, ghost);
             }
+        }
+        if (connectionSimulator != null) {
+            connectionSimulator.rebalanceOnlineRatioSilently();
         }
     }
 

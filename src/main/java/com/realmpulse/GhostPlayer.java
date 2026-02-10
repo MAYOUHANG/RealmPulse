@@ -7,6 +7,7 @@ import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.UUID;
@@ -20,8 +21,6 @@ public class GhostPlayer {
 
     private final String name;
     private final UUID uuid;
-    private final String skinTexture;
-    private final String skinSignature;
     private final String prefix;
     private int ping;
     private final WrappedGameProfile profile;
@@ -32,10 +31,8 @@ public class GhostPlayer {
 
     public GhostPlayer(String name, JavaPlugin plugin, Language language) {
         this.name = name;
-        this.uuid = UUID.randomUUID();
+        this.uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(StandardCharsets.UTF_8));
         this.level = randomWeightedLevel();
-        this.skinTexture = "";
-        this.skinSignature = "";
         this.prefix = resolveDefaultPrefix(plugin);
         this.displayName = this.prefix + this.name;
         this.ping = ThreadLocalRandom.current().nextInt(50, 301);
@@ -145,14 +142,6 @@ public class GhostPlayer {
 
     public UUID getUuid() {
         return uuid;
-    }
-
-    public String getSkinTexture() {
-        return skinTexture;
-    }
-
-    public String getSkinSignature() {
-        return skinSignature;
     }
 
     public String getPrefix() {

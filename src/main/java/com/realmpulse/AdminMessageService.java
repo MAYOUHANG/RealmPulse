@@ -6,6 +6,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class AdminMessageService {
 
     private static final String DEFAULT_PREFIX = "&#79C7F6&lR&#98DEF7&lP &8|&r";
+    private static final String DEFAULT_ADMIN_PRIMARY = "zh";
+    private static final String DEFAULT_ADMIN_SECONDARY = "en";
 
     private final JavaPlugin plugin;
     private final PluginConfigService configService;
@@ -32,23 +34,23 @@ public class AdminMessageService {
     }
 
     public void sendHelp(CommandSender sender) {
-        send(sender, "&#8ED9FF&lRealmPulse &7\u7BA1\u7406\u5458\u547D\u4EE4 / Admin Commands");
-        send(sender, "&7/rp bots &8- &b\u67E5\u770B\u673A\u5668\u4EBA\u6570\u91CF &7/ Show bot count");
-        send(sender, "&7/rp addbot <count> &8- &b\u589E\u52A0\u673A\u5668\u4EBA &7/ Add bots");
-        send(sender, "&7/rp removebot <count> &8- &b\u51CF\u5C11\u673A\u5668\u4EBA &7/ Remove bots");
-        send(sender, "&7/rp setbot <count> &8- &b\u8BBE\u7F6E\u673A\u5668\u4EBA\u603B\u6570 &7/ Set bot count");
-        send(sender, "&7/rp qamodel <model> &8- &b\u8BBE\u7F6E\u95EE\u7B54\u6A21\u578B &7/ Set QA model");
-        send(sender, "&7/rp summarymodel <model> &8- &b\u8BBE\u7F6E\u603B\u7ED3\u6A21\u578B &7/ Set summary model");
-        send(sender, "&7/rp qaon <on|off> &8- &b\u95EE\u7B54 AI \u5F00\u5173 &7/ QA AI toggle");
-        send(sender, "&7/rp summaryon <on|off> &8- &b\u603B\u7ED3 AI \u5F00\u5173 &7/ Summary AI toggle");
-        send(sender, "&7/rp qakey <key> &8- &b\u8BBE\u7F6E\u95EE\u7B54\u5BC6\u94A5 &7/ Set QA key");
-        send(sender, "&7/rp summarykey <key> &8- &b\u8BBE\u7F6E\u603B\u7ED3\u5BC6\u94A5 &7/ Set summary key");
-        send(sender, "&7/rp profile <lowcost|balanced|pro> &8- &b\u4E00\u952E\u5E94\u7528\u6863\u4F4D &7/ One-click profile");
-        send(sender, "&7/rp scene <peak|quiet|promo> &8- &b\u5207\u6362\u8FD0\u8425\u573A\u666F &7/ Scene switch");
-        send(sender, "&7/rp scene auto <on|off|status> &8- &b\u81EA\u52A8\u573A\u666F\u5F00\u5173 &7/ Auto scene switch");
-        send(sender, "&7/rp advancement <status|trigger> &8- &b\u6210\u5C31\u6A21\u62DF\u5668\u7BA1\u7406 &7/ Advancement simulator");
-        send(sender, "&7/rp learn status|flush &8- &b\u5B66\u4E60\u961F\u5217\u7BA1\u7406 &7/ Learning controls");
-        send(sender, "&7/rp reload &8- &b\u91CD\u8F7D\u914D\u7F6E &7/ Reload config");
+        send(sender, "&#8ED9FF&l" + localize("RealmPulse 管理员命令", "RealmPulse Admin Commands"));
+        send(sender, "&7/rp bots &8- &b" + localize("查看机器人数量", "Show bot count"));
+        send(sender, "&7/rp addbot <count> &8- &b" + localize("增加机器人", "Add bots"));
+        send(sender, "&7/rp removebot <count> &8- &b" + localize("减少机器人", "Remove bots"));
+        send(sender, "&7/rp setbot <count> &8- &b" + localize("设置机器人总数", "Set bot count"));
+        send(sender, "&7/rp qamodel <model> &8- &b" + localize("设置问答模型", "Set QA model"));
+        send(sender, "&7/rp summarymodel <model> &8- &b" + localize("设置总结模型", "Set summary model"));
+        send(sender, "&7/rp qaon <on|off> &8- &b" + localize("问答 AI 开关", "QA AI toggle"));
+        send(sender, "&7/rp summaryon <on|off> &8- &b" + localize("总结 AI 开关", "Summary AI toggle"));
+        send(sender, "&7/rp qakey <key> &8- &b" + localize("设置问答密钥", "Set QA key"));
+        send(sender, "&7/rp summarykey <key> &8- &b" + localize("设置总结密钥", "Set summary key"));
+        send(sender, "&7/rp profile <lowcost|balanced|pro> &8- &b" + localize("一键应用档位", "One-click profile"));
+        send(sender, "&7/rp scene <peak|quiet|promo> &8- &b" + localize("切换运营场景", "Scene switch"));
+        send(sender, "&7/rp scene auto <on|off|status> &8- &b" + localize("自动场景开关", "Auto scene switch"));
+        send(sender, "&7/rp advancement <status|trigger> &8- &b" + localize("成就模拟器管理", "Advancement simulator"));
+        send(sender, "&7/rp learn status|flush &8- &b" + localize("学习队列管理", "Learning controls"));
+        send(sender, "&7/rp reload &8- &b" + localize("重载配置", "Reload config"));
     }
 
     private void send(CommandSender sender, String message) {
@@ -78,16 +80,42 @@ public class AdminMessageService {
     private String localize(String zh, String en) {
         String safeZh = zh == null ? "" : zh.trim();
         String safeEn = en == null ? "" : en.trim();
-        if (safeEn.isBlank()) {
-            return safeZh;
+
+        String primary = configService.getString("language.admin-primary", DEFAULT_ADMIN_PRIMARY);
+        String secondary = configService.getString("language.admin-secondary", DEFAULT_ADMIN_SECONDARY);
+        boolean showSecondary = configService.getBoolean("language.show-secondary", false);
+        boolean primaryEnglish = isEnglishCode(primary);
+        boolean secondaryEnglish = isEnglishCode(secondary);
+
+        String primaryText = primaryEnglish ? safeEn : safeZh;
+        String fallbackText = primaryEnglish ? safeZh : safeEn;
+        if (primaryText.isBlank() || (!primaryEnglish && looksGarbledChinese(primaryText))) {
+            primaryText = fallbackText;
         }
-        if (safeZh.equalsIgnoreCase(safeEn)) {
-            return safeEn;
+        if (primaryText.isBlank()) {
+            return "";
         }
-        if (safeZh.isBlank() || looksGarbledChinese(safeZh)) {
-            return safeEn;
+
+        if (!showSecondary) {
+            return primaryText;
         }
-        return safeZh + " &8| &7" + safeEn;
+
+        String secondaryText = secondaryEnglish ? safeEn : safeZh;
+        if (secondaryText.isBlank() || secondaryText.equalsIgnoreCase(primaryText)) {
+            return primaryText;
+        }
+        if (!secondaryEnglish && looksGarbledChinese(secondaryText)) {
+            return primaryText;
+        }
+        return primaryText + " &8| &7" + secondaryText;
+    }
+
+    private boolean isEnglishCode(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String normalized = value.trim().toLowerCase();
+        return normalized.startsWith("en");
     }
 
     private boolean looksGarbledChinese(String text) {
@@ -115,3 +143,4 @@ public class AdminMessageService {
             || c == '\u940E';
     }
 }
+
